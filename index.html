@@ -6,6 +6,8 @@
     <meta name="theme-color" content="#800020">
     <title>Anagrafica Congregazione</title>
 
+    <link rel="manifest" href="data:application/manifest+json,{'name':'Anagrafica JW','short_name':'Anagrafica','start_url':'.','display':'standalone','background_color':'#800020','theme_color':'#800020','icons':[{'src':'icona-192.png','sizes':'192x192','type':'image/png'}]}">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -25,7 +27,7 @@
     </script>
 
     <style>
-        body { -webkit-tap-highlight-color: transparent; font-family: -apple-system, system-ui, sans-serif; }
+        body { -webkit-tap-highlight-color: transparent; font-family: -apple-system, system-ui, sans-serif; overflow-x: hidden; }
         .hidden-page { display: none !important; }
         .page-content { animation: fadeIn 0.2s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -36,14 +38,13 @@
     <header class="bg-bordeaux text-white p-4 shadow-lg sticky top-0 z-50">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <img src="icona-192.png" alt="icon" class="w-8 h-8 rounded-lg border border-white/20">
+                <img src="icona-192.png" alt="icon" class="w-8 h-8 rounded-lg border border-white/20 onerror="this.src='https://via.placeholder.com/192/800020/FFFFFF?text=JW'">
                 <div class="font-bold text-sm leading-tight uppercase tracking-wide">Anagrafica<br>Congregazione</div>
             </div>
-            <div class="flex gap-2 items-center">
+            <div id="installContainer" class="flex gap-2 items-center">
                 <button onclick="condividiApp()" class="bg-white/10 p-2 rounded-full hover:bg-white/20">
                     <span class="text-lg">🔗</span>
                 </button>
-                <div id="installBtnContainer"></div>
             </div>
         </div>
     </header>
@@ -51,7 +52,6 @@
     <main class="max-w-2xl mx-auto p-4">
 
         <div id="dashboard" class="page-content space-y-4">
-            
             <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-200">
                 <h2 class="text-bordeaux font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
                     <span>👤</span> Membri & S-21
@@ -61,8 +61,8 @@
                         + NUOVA SCHEDA S-21
                     </button>
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="mostraPagina('page-rapporti')" class="bg-gray-50 text-gray-700 py-3 rounded-xl font-bold text-[10px] border uppercase">📝 Inserisci Rapp.</button>
-                        <button onclick="mostraPagina('page-mancanti')" class="bg-red-50 text-red-700 py-3 rounded-xl font-bold text-[10px] border border-red-100 uppercase">⚠️ Mancanti</button>
+                        <button onclick="alert('Funzionalità inserimento rapporti in arrivo')" class="bg-gray-50 text-gray-700 py-3 rounded-xl font-bold text-[10px] border uppercase">📝 Inserisci Rapp.</button>
+                        <button onclick="alert('Analisi rapporti mancanti in arrivo')" class="bg-red-50 text-red-700 py-3 rounded-xl font-bold text-[10px] border border-red-100 uppercase">⚠️ Mancanti</button>
                     </div>
                     <button onclick="mostraPagina('page-anagrafica')" class="w-full bg-gray-50 text-bordeaux border border-gray-200 py-3 rounded-xl font-bold text-sm">🔤 APRI ANAGRAFICA COMPLETA</button>
                 </div>
@@ -78,28 +78,46 @@
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <button onclick="mostraPagina('page-archivio')" class="bg-gray-800 text-white py-3 rounded-xl font-bold text-[10px] uppercase">📁 Archivio Moduli</button>
-                    <button onclick="apriPaginaS88()" class="bg-blue-100 text-blue-800 py-3 rounded-xl font-bold text-[10px] uppercase">📊 Modulo S-88</button>
+                    <button onclick="alert('Modulo S-88 caricato da templates/S-88_1.pdf')" class="bg-blue-100 text-blue-800 py-3 rounded-xl font-bold text-[10px] uppercase">📊 Modulo S-88</button>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="esportaDati()" class="bg-white p-4 rounded-2xl border text-center">
+                <button onclick="esportaDati()" class="bg-white p-4 rounded-2xl border text-center active:bg-gray-50">
                     <div class="text-xl">📤</div>
-                    <div class="text-[10px] font-bold uppercase mt-1">Backup</div>
+                    <div class="text-[10px] font-bold uppercase mt-1">Backup Dati</div>
                 </button>
-                <label class="bg-white p-4 rounded-2xl border text-center cursor-pointer">
+                <label class="bg-white p-4 rounded-2xl border text-center cursor-pointer active:bg-gray-50">
                     <div class="text-xl">📥</div>
-                    <div class="text-[10px] font-bold uppercase mt-1">Importa</div>
+                    <div class="text-[10px] font-bold uppercase mt-1">Importa Dati</div>
                     <input type="file" class="hidden" accept=".json" onchange="importaDati(event)">
                 </label>
             </div>
         </div>
 
+        <div id="page-anagrafica" class="page-content hidden-page bg-white min-h-[80vh] rounded-t-3xl shadow-2xl mt-4">
+            <div class="sticky top-0 bg-gray-50 p-4 rounded-t-3xl border-b flex justify-between items-center z-10">
+                <button onclick="tornaHome()" class="bg-gray-200 px-4 py-2 rounded-xl font-bold text-xs">← INDIETRO</button>
+                <h2 class="font-bold text-bordeaux uppercase">Anagrafica</h2>
+                <button onclick="window.print()" class="bg-white border p-2 rounded-lg text-lg">📄</button>
+            </div>
+            <div id="lista-anagrafica" class="p-4 space-y-2"></div>
+        </div>
+
+        <div id="page-gruppi" class="page-content hidden-page bg-white min-h-[80vh] rounded-t-3xl shadow-2xl mt-4">
+            <div class="sticky top-0 bg-gray-50 p-4 rounded-t-3xl border-b flex justify-between items-center z-10">
+                <button onclick="tornaHome()" class="bg-gray-200 px-4 py-2 rounded-xl font-bold text-xs">← INDIETRO</button>
+                <h2 class="font-bold text-amber-600 uppercase">Gruppi</h2>
+                <button onclick="aggiungiGruppo()" class="bg-amber-500 text-white px-3 py-2 rounded-xl font-bold text-xs">+ GRUPPO</button>
+            </div>
+            <div id="lista-gruppi" class="p-4 space-y-3"></div>
+        </div>
+
         <div id="page-pionieri" class="page-content hidden-page bg-white min-h-[80vh] rounded-t-3xl shadow-2xl mt-4">
             <div class="sticky top-0 bg-blue-700 text-white p-4 rounded-t-3xl border-b flex justify-between items-center z-10">
                 <button onclick="tornaHome()" class="bg-white/20 px-3 py-2 rounded-xl font-bold text-[10px]">← CHIUDI</button>
-                <h2 class="font-bold uppercase text-sm">Elenco Pionieri</h2>
-                <button onclick="zipPionieri()" class="bg-white text-blue-700 px-3 py-2 rounded-xl font-bold text-[10px] uppercase shadow-lg">📦 ZIP Totale</button>
+                <h2 class="font-bold uppercase text-sm">Pionieri Regolari</h2>
+                <button onclick="zipPionieri()" class="bg-white text-blue-700 px-3 py-2 rounded-xl font-bold text-[10px] uppercase">📦 ZIP</button>
             </div>
             <div id="lista-pionieri" class="p-4 space-y-2"></div>
         </div>
@@ -109,170 +127,199 @@
                 <button onclick="tornaHome()" class="bg-white/20 px-3 py-2 rounded-xl font-bold text-[10px]">← CHIUDI</button>
                 <h2 class="font-bold uppercase text-sm">Archivio Documenti</h2>
             </div>
-            <div class="p-6 space-y-6">
-                <div>
-                    <h3 class="text-xs font-black text-gray-400 uppercase mb-3">Moduli S-88 (Adunanze)</h3>
-                    <div id="archivio-s88" class="grid grid-cols-1 gap-2"></div>
-                </div>
-                <hr>
-                <div>
-                    <h3 class="text-xs font-black text-gray-400 uppercase mb-3">Moduli S-21 (Cartoline)</h3>
-                    <button onclick="zipTutti()" class="w-full py-3 bg-bordeaux/10 text-bordeaux rounded-xl font-bold text-xs uppercase mb-2">Scarica Tutte le S-21 (.ZIP)</button>
-                    <div id="archivio-s21" class="text-[10px] text-gray-500 italic text-center">Accedi all'anagrafica per i singoli download</div>
-                </div>
+            <div class="p-6">
+                <button onclick="zipTutti()" class="w-full py-4 bg-bordeaux text-white rounded-2xl font-bold shadow-lg">SCARICA TUTTE LE S-21 (.ZIP)</button>
             </div>
         </div>
-
-        <div id="page-anagrafica" class="page-content hidden-page bg-white min-h-[80vh] rounded-t-3xl shadow-2xl mt-4">
-            <div class="sticky top-0 bg-gray-50 p-4 rounded-t-3xl border-b flex justify-between items-center z-10">
-                <button onclick="tornaHome()" class="bg-gray-200 px-4 py-2 rounded-xl font-bold text-xs">← INDIETRO</button>
-                <h2 class="font-bold text-bordeaux uppercase">Anagrafica</h2>
-                <div class="flex gap-2">
-                    <button onclick="stampaListaAnagrafica()" class="bg-white border p-2 rounded-lg text-lg">📄</button>
-                    <button onclick="zipTutti()" class="bg-bordeaux text-white p-2 rounded-lg text-lg">📦</button>
-                </div>
-            </div>
-            <div id="lista-anagrafica" class="p-4 space-y-2"></div>
-        </div>
-        
-        <div id="page-gruppi" class="page-content hidden-page bg-white min-h-[80vh] rounded-t-3xl shadow-2xl mt-4">
-            <div class="sticky top-0 bg-gray-50 p-4 rounded-t-3xl border-b flex justify-between items-center z-10">
-                <button onclick="tornaHome()" class="bg-gray-200 px-4 py-2 rounded-xl font-bold text-xs">← INDIETRO</button>
-                <h2 class="font-bold text-amber-600 uppercase">Gruppi</h2>
-                <button onclick="vistaTuttiGruppiPDF()" class="bg-amber-500 text-white px-3 py-2 rounded-xl font-bold text-xs uppercase">📄 PDF Lista</button>
-            </div>
-            <div id="lista-gruppi" class="p-4 space-y-3"></div>
-        </div>
-        </main>
+    </main>
 
     <div id="modal" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50">
-                <h3 id="modalTitle" class="font-bold text-lg text-bordeaux">Modifica</h3>
-                <button onclick="chiudiModal()" class="w-8 h-8 rounded-full bg-gray-200 font-bold">✕</button>
+                <h3 id="modalTitle" class="font-bold text-lg text-bordeaux">Dettagli</h3>
+                <button onclick="chiudiModal()" class="w-10 h-10 rounded-full bg-gray-200 font-bold flex items-center justify-center">✕</button>
             </div>
             <div id="modalBody" class="p-6 overflow-y-auto"></div>
         </div>
     </div>
 
     <script>
-        // CONFIGURAZIONE & DB (Mantieni le tue logiche esistenti)
-        const BASE_URL = "https://asarritzu-boop.github.io/Anagrafica/";
+        // --- CONFIGURAZIONE ---
+        // Ora punta alla cartella 'templates/'
+        const BASE_TEMPLATE_URL = "templates/"; 
         const FILES = { s21: "S-21_I.pdf", s88: "S-88_1.pdf" };
-        const MESI = ["Settembre", "Ottobre", "Novembre", "Dicembre", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto"];
-        
-        let db = JSON.parse(localStorage.getItem('jw_db_v2')) || { membri: [], gruppi: [], s88: {} };
-        function salvaDB() { localStorage.setItem('jw_db_v2', JSON.stringify(db)); }
 
-        // NAVIGAZIONE
+        let db = JSON.parse(localStorage.getItem('jw_anagrafica_db')) || { membri: [], gruppi: [] };
+
+        function salvaDB() { 
+            localStorage.setItem('jw_anagrafica_db', JSON.stringify(db)); 
+        }
+
+        // --- GESTIONE PWA (INSTALLAZIONE) ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const container = document.getElementById('installContainer');
+            const installBtn = document.createElement('button');
+            installBtn.className = "bg-white text-bordeaux px-3 py-1 rounded-full font-bold text-[10px] uppercase shadow-md mr-2";
+            installBtn.innerText = "Installa App";
+            installBtn.onclick = async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') container.removeChild(installBtn);
+                    deferredPrompt = null;
+                }
+            };
+            container.prepend(installBtn);
+        });
+
+        // --- NAVIGAZIONE ---
         function mostraPagina(pageId) {
             document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden-page'));
             document.getElementById(pageId).classList.remove('hidden-page');
-            window.scrollTo(0,0);
-            if(pageId === 'page-pionieri') renderPionieri();
-            if(pageId === 'page-archivio') renderArchivio();
             if(pageId === 'page-anagrafica') renderAnagrafica();
             if(pageId === 'page-gruppi') renderGruppi();
+            if(pageId === 'page-pionieri') renderPionieri();
         }
+
         function tornaHome() {
             document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden-page'));
             document.getElementById('dashboard').classList.remove('hidden-page');
         }
 
-        // --- FUNZIONE CONDIVIDI ---
-        async function condividiApp() {
-            const shareData = {
-                title: 'Anagrafica JW',
-                text: 'Accedi all\'app Anagrafica Congregazione:',
-                url: window.location.href
-            };
-            try {
-                if (navigator.share) {
-                    await navigator.share(shareData);
-                } else {
-                    const text = `${shareData.text} ${shareData.url}`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                }
-            } catch (err) { console.log("Errore condivisione"); }
+        // --- FUNZIONI MEMBRI ---
+        function nuovaScheda() {
+            const html = `
+                <form onsubmit="salvaMembro(event)" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="text" name="cognome" placeholder="Cognome" class="w-full p-3 border rounded-xl" required>
+                        <input type="text" name="nome" placeholder="Nome" class="w-full p-3 border rounded-xl" required>
+                    </div>
+                    <input type="text" name="indirizzo" placeholder="Indirizzo" class="w-full p-3 border rounded-xl">
+                    <input type="text" name="telefono" placeholder="Telefono" class="w-full p-3 border rounded-xl">
+                    <input type="date" name="nascita" class="w-full p-3 border rounded-xl">
+                    <select name="gruppoId" class="w-full p-3 border rounded-xl">
+                        <option value="">Seleziona Gruppo</option>
+                        ${db.gruppi.map(g => `<option value="${g.id}">${g.nome}</option>`).join('')}
+                    </select>
+                    <div class="flex items-center gap-4 bg-gray-50 p-3 rounded-xl">
+                        <label class="flex items-center gap-2 text-xs font-bold"><input type="checkbox" name="pioniereR"> PIONIERE REG.</label>
+                        <label class="flex items-center gap-2 text-xs font-bold"><input type="checkbox" name="unto"> UNTO</label>
+                    </div>
+                    <button type="submit" class="w-full bg-bordeaux text-white py-4 rounded-2xl font-bold shadow-lg">SALVA NELL'ANAGRAFICA</button>
+                </form>
+            `;
+            apriModal("Nuova Scheda S-21", html);
         }
 
-        // --- GESTIONE PIONIERI ---
-        function renderPionieri() {
-            const container = document.getElementById('lista-pionieri');
-            container.innerHTML = "";
-            const pionieri = db.membri.filter(m => m.privilegi.pioniereR)
-                                     .sort((a,b) => a.cognome.localeCompare(b.cognome));
+        function salvaMembro(e) {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const nuovo = {
+                id: Date.now(),
+                cognome: fd.get('cognome'),
+                nome: fd.get('nome'),
+                indirizzo: fd.get('indirizzo'),
+                telefono: fd.get('telefono'),
+                nascita: fd.get('nascita'),
+                gruppoId: fd.get('gruppoId'),
+                privilegi: { pioniereR: fd.get('pioniereR') === 'on', unto: fd.get('unto') === 'on' }
+            };
+            db.membri.push(nuovo);
+            salvaDB();
+            chiudiModal();
+            alert("Salvato correttamente!");
+        }
 
-            if(pionieri.length === 0) {
-                container.innerHTML = "<p class='text-center p-10 text-gray-400 text-sm'>Nessun pioniere regolare registrato.</p>";
-                return;
-            }
-
-            pionieri.forEach(p => {
-                const g = db.gruppi.find(x => x.id == p.gruppoId);
-                container.innerHTML += `
-                    <div class="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm">
+        function renderAnagrafica() {
+            const cont = document.getElementById('lista-anagrafica');
+            cont.innerHTML = db.membri.length ? "" : "<p class='text-center text-gray-400 py-10'>Nessun membro inserito.</p>";
+            db.membri.sort((a,b) => a.cognome.localeCompare(b.cognome)).forEach(m => {
+                cont.innerHTML += `
+                    <div class="flex justify-between items-center p-4 bg-white border rounded-2xl shadow-sm mb-2">
                         <div>
-                            <div class="font-bold text-blue-800 text-sm">${p.cognome} ${p.nome}</div>
-                            <div class="text-[9px] text-gray-500 uppercase font-bold">${g ? g.nome : 'Nessun Gruppo'}</div>
+                            <div class="font-bold">${m.cognome} ${m.nome}</div>
+                            <div class="text-[10px] text-gray-400 uppercase font-bold">${m.privilegi.pioniereR ? '⭐ Pioniere' : 'Proclamatore'}</div>
                         </div>
-                        <button onclick="scaricaSingolaS21(${p.id})" class="bg-white border-2 border-blue-100 p-2 rounded-xl text-xs">📄 PDF</button>
+                        <div class="flex gap-2">
+                            <button onclick="scaricaSingolaS21(${m.id})" class="p-2 bg-gray-100 rounded-lg">📄</button>
+                            <button onclick="eliminaMembro(${m.id})" class="p-2 bg-red-50 text-red-500 rounded-lg">🗑️</button>
+                        </div>
                     </div>`;
             });
         }
 
+        function eliminaMembro(id) {
+            if(confirm("Vuoi davvero eliminare questo membro?")) {
+                db.membri = db.membri.filter(m => m.id !== id);
+                salvaDB();
+                renderAnagrafica();
+            }
+        }
+
+        // --- GESTIONE PDF (Cartella Templates) ---
         async function scaricaSingolaS21(mid) {
             const m = db.membri.find(x => x.id === mid);
-            const url = BASE_URL + FILES.s21;
-            const bytes = await fetch(url).then(res => res.arrayBuffer());
-            const pdfDoc = await PDFLib.PDFDocument.load(bytes);
-            const form = pdfDoc.getForm();
-            
-            // Logica compilazione campI (uguale alla funzione scaricaZipGruppo)
             try {
+                const url = BASE_TEMPLATE_URL + FILES.s21;
+                const bytes = await fetch(url).then(res => {
+                    if(!res.ok) throw new Error("File non trovato in /templates/");
+                    return res.arrayBuffer();
+                });
+                
+                const pdfDoc = await PDFLib.PDFDocument.load(bytes);
+                const form = pdfDoc.getForm();
+                
+                // Compilazione campi basata su nomi standard S-21
                 form.getTextField('Nome e cognome').setText(`${m.cognome} ${m.nome}`);
-                // ... aggiungi altri campi
-            } catch(e){}
-
-            const pdfBytes = await pdfDoc.save();
-            scaricaBlob(pdfBytes, `S21_${m.cognome}.pdf`);
+                if(m.indirizzo) try { form.getTextField('Indirizzo').setText(m.indirizzo); } catch(e){}
+                if(m.telefono) try { form.getTextField('Telefono').setText(m.telefono); } catch(e){}
+                
+                const pdfBytes = await pdfDoc.save();
+                scaricaBlob(pdfBytes, `S-21_${m.cognome}.pdf`);
+            } catch(e) {
+                alert("Errore: verifica che il file S-21_I.pdf sia nella cartella 'templates'");
+                console.error(e);
+            }
         }
 
-        async function zipPionieri() {
-            const pionieri = db.membri.filter(m => m.privilegi.pioniereR);
-            if(pionieri.length === 0) return alert("Nessun pioniere!");
-            alert("Generazione ZIP Pionieri...");
+        async function zipTutti() {
+            if(!db.membri.length) return alert("Anagrafica vuota!");
             const zip = new JSZip();
-            const template = await fetch(BASE_URL + FILES.s21).then(res => res.arrayBuffer());
+            const templateBytes = await fetch(BASE_TEMPLATE_URL + FILES.s21).then(res => res.arrayBuffer());
 
-            for(const m of pionieri) {
-                const pdfDoc = await PDFLib.PDFDocument.load(template);
+            for(const m of db.membri) {
+                const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
                 const form = pdfDoc.getForm();
-                try { form.getTextField('Nome e cognome').setText(`${m.cognome} ${m.nome}`); } catch(e){}
+                form.getTextField('Nome e cognome').setText(`${m.cognome} ${m.nome}`);
                 const pdfBytes = await pdfDoc.save();
-                zip.file(`PIONIERE_${m.cognome}_${m.nome}.pdf`, pdfBytes);
+                zip.file(`${m.cognome}_${m.nome}.pdf`, pdfBytes);
             }
             const content = await zip.generateAsync({type:"blob"});
-            scaricaBlob(content, "Cartoline_Pionieri.zip");
+            scaricaBlob(content, "Tutte_le_S21.zip");
         }
 
-        // --- GESTIONE ARCHIVIO ---
-        function renderArchivio() {
-            const contS88 = document.getElementById('archivio-s88');
-            contS88.innerHTML = "";
-            
-            // Esempio per anno in corso
-            const anni = ["2024", "2025"]; 
-            anni.forEach(anno => {
-                const hasData = db.s88[anno];
-                contS88.innerHTML += `
-                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border">
-                        <span class="font-bold text-xs uppercase">Riepilogo Adunanze S-88 (${anno})</span>
-                        <div class="flex gap-2">
-                            <button onclick="apriPaginaS88()" class="text-[10px] bg-white border px-2 py-1 rounded-md">MODIFICA</button>
-                            <button onclick="scaricaPDF_S88()" class="text-[10px] bg-blue-600 text-white px-2 py-1 rounded-md">DOWNLOAD</button>
-                        </div>
-                    </div>`;
+        // --- GRUPPI ---
+        function aggiungiGruppo() {
+            const nome = prompt("Nome Gruppo (es: Gruppo 3):");
+            if(nome) {
+                db.gruppi.push({ id: Date.now(), nome: nome });
+                salvaDB();
+                renderGruppi();
+            }
+        }
+
+        function renderGruppi() {
+            const cont = document.getElementById('lista-gruppi');
+            cont.innerHTML = "";
+            db.gruppi.forEach(g => {
+                const n = db.membri.filter(m => m.gruppoId == g.id).length;
+                cont.innerHTML += `<div class="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex justify-between items-center">
+                    <div><span class="font-bold">${g.nome}</span> <span class="text-[10px] text-amber-600 ml-2">(${n} membri)</span></div>
+                    <button onclick="eliminaGruppo(${g.id})" class="text-xs text-red-400">Rimuovi</button>
+                </div>`;
             });
         }
 
@@ -283,14 +330,47 @@
             a.download = nome; a.click();
         }
 
-        function chiudiModal() { document.getElementById('modal').classList.add('hidden'); }
+        function esportaDati() {
+            scaricaBlob(JSON.stringify(db), `backup_jw_${new Date().toISOString().split('T')[0]}.json`);
+        }
+
+        function importaDati(e) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                db = JSON.parse(event.target.result);
+                salvaDB();
+                location.reload();
+            };
+            reader.readAsText(e.target.files[0]);
+        }
+
         function apriModal(titolo, html) {
             document.getElementById('modalTitle').innerText = titolo;
             document.getElementById('modalBody').innerHTML = html;
             document.getElementById('modal').classList.remove('hidden');
         }
 
-        // [Incolla qui il resto delle tue funzioni: salvaMembroDB, eliminaMembro, renderAnagrafica, renderGruppi, etc.]
+        function chiudiModal() { document.getElementById('modal').classList.add('hidden'); }
+
+        async function condividiApp() {
+            if (navigator.share) {
+                await navigator.share({ title: 'Anagrafica', url: window.location.href });
+            } else {
+                window.open(`https://wa.me/?text=${encodeURIComponent(window.location.href)}`);
+            }
+        }
+
+        function renderPionieri() {
+            const cont = document.getElementById('lista-pionieri');
+            cont.innerHTML = "";
+            db.membri.filter(m => m.privilegi.pioniereR).forEach(p => {
+                cont.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-blue-50 border rounded-xl">
+                        <span class="font-bold text-blue-900">${p.cognome} ${p.nome}</span>
+                        <button onclick="scaricaSingolaS21(${p.id})" class="text-[10px] bg-white border px-3 py-1 rounded-lg">Scarica S-21</button>
+                    </div>`;
+            });
+        }
     </script>
 </body>
 </html>
