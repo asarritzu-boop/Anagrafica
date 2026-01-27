@@ -1,0 +1,26 @@
+{
+  "name": "Anagrafica Congregazione S-21/S-88",
+  "short_name": "Anagrafica",
+  "description": "Gestione profili, rapporti di servizio S-21 e statistiche S-88",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#800020",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icona-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icona.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "it"
+}

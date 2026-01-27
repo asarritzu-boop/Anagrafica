@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anagrafica Congregazione S-21/S-88</title>
+    
+    <meta name="theme-color" content="#800020">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icona-192.png">
+    <meta property="og:type" content="website">
+<meta property="og:url" content="https://asarritzu-boop.github.io/Anagrafica/">
+<meta property="og:title" content="Anagrafica Congregazione S-21 / S-88">
+<meta property="og:description" content="Gestione locale rapporti di servizio e statistiche adunanze.">
+<meta property="og:image" content="https://asarritzu-boop.github.io/Anagrafica/icona.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+        :root { --bordeaux: #800020; }
+        .bg-bordeaux { background-color: var(--bordeaux); }
+        .text-bordeaux { color: var(--bordeaux); }
+        .border-bordeaux { border-color: var(--bordeaux); }
+        .btn-card { border-top: 4px solid var(--bordeaux); transition: 0.2s; cursor: pointer; }
+        .btn-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .modal-overlay { background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <nav class="bg-bordeaux text-white p-4 shadow-xl sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <img src="icona-192.png" alt="Logo" class="w-10 h-10 rounded-lg border border-white/20">
+                <h1 class="text-xl font-bold">Anagrafica S-21 & S-88</h1>
+            </div>
+            <button onclick="condividiApp()" class="bg-white/20 px-4 py-1 rounded-full text-sm font-medium">Condividi 🔗</button>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto p-4 space-y-6">
+        
+        <section onclick="apriModalNuovoMembro()" class="bg-white p-8 rounded-2xl shadow-sm border-2 border-dashed border-bordeaux text-center cursor-pointer hover:bg-red-50 transition">
+            <span class="text-bordeaux font-black text-xl uppercase tracking-widest">+ AGGIUNGI COMPONENTE ALLA CONGREGAZIONE</span>
+        </section>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="btn-card bg-white p-6 rounded-xl shadow-md">
+                <h3 class="font-bold text-lg mb-4 text-gray-700">Anagrafica</h3>
+                <div class="space-y-2">
+                    <button onclick="stampaAlfabetico()" class="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex justify-between">Alfabetico <span>PDF ↓</span></button>
+                    <button onclick="stampaPerGruppi()" class="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex justify-between">Per Gruppi <span>PDF ↓</span></button>
+                    <button onclick="vaiAElencoProfili()" class="w-full mt-2 bg-bordeaux text-white p-3 rounded-lg font-bold shadow-lg">Compila Dati Mensili</button>
+                    <button onclick="apriArchivio()" class="w-full mt-2 border-2 border-bordeaux text-bordeaux p-3 rounded-lg font-bold hover:bg-red-50">🏛️ ARCHIVIO STORICO</button>
+                </div>
+            </div>
+
+            <div class="btn-card bg-white p-6 rounded-xl shadow-md">
+                <h3 class="font-bold text-lg mb-4 text-gray-700">Organizzazione</h3>
+                <div class="space-y-2">
+                    <button onclick="mostraGestioneGruppi()" class="w-full bg-gray-100 p-3 rounded-lg text-left hover:bg-gray-200">Gruppi di Servizio</button>
+                    <button onclick="mostraPionieri()" class="w-full bg-gray-100 p-3 rounded-lg text-left hover:bg-gray-200">Gruppo Pionieri Regolari</button>
+                    <button onclick="apriEditorS88()" class="w-full mt-4 bg-gray-800 text-white p-3 rounded-lg font-bold">COMPILA S-88</button>
+                </div>
+            </div>
+        </div>
+
+        <section class="bg-white p-6 rounded-xl shadow-md border-t-4 border-red-600">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-red-700 uppercase">Rapporti Mancanti</h3>
+                <button onclick="controllaRapportiMancanti()" class="bg-red-600 text-white px-8 py-2 rounded-lg font-bold shadow-md">VERIFICA ORA</button>
+            </div>
+            <div id="mancantiResult" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+        </section>
+
+        <div class="flex flex-wrap justify-center gap-6 py-6 border-t border-gray-200">
+            <button onclick="esportaBackup()" class="text-sm text-gray-500 hover:text-bordeaux font-medium">📤 Esporta Backup</button>
+            <label class="text-sm text-gray-500 hover:text-bordeaux font-medium cursor-pointer">
+                📥 Importa JSON <input type="file" id="importFile" class="hidden" onchange="importaBackup(event)">
+            </label>
+            <button onclick="document.getElementById('pdf-import').click()" class="text-sm text-blue-600 font-bold">📄 Importa da PDF</button>
+            <input type="file" id="pdf-import" class="hidden" accept="application/pdf" onchange="importaDatiDaPDF(event)">
+        </div>
+    </main>
+
+    <div id="mainModal" class="modal-overlay fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
+        <div id="modalContent" class="bg-white w-full max-w-2xl rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
