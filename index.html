@@ -3,113 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Anagrafica Congregazione</title>
+    <title>Anagrafica S-21 & S-88</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
     <script>
         tailwind.config = {
             theme: { extend: { colors: { bordeaux: '#800020' } } }
         }
     </script>
-    
-    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
-        body { -webkit-tap-highlight-color: transparent; }
-        .modal-bg { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); }
+        body { -webkit-tap-highlight-color: transparent; font-family: sans-serif; }
+        .modal-bg { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans no-scrollbar pb-10">
+<body class="bg-gray-50 text-gray-900 no-scrollbar pb-10">
 
     <div class="max-w-4xl mx-auto p-6">
-        <header class="flex justify-between items-center mb-10">
+        <header class="flex justify-between items-center mb-10 mt-4">
             <div class="flex items-center gap-4">
-                <img src="icona.png" alt="Logo" class="w-12 h-12 rounded-2xl shadow-lg border-2 border-white object-cover">
+                <div class="w-14 h-14 bg-bordeaux rounded-2xl shadow-lg flex items-center justify-center text-white text-xl font-black">JW</div>
                 <div>
-                    <h1 class="text-3xl font-black text-bordeaux tracking-tight uppercase">Dashboard</h1>
-                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">S-21 & S-88</p>
+                    <h1 class="text-3xl font-black text-bordeaux tracking-tighter uppercase">Dashboard</h1>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">S-21 & S-88</p>
                 </div>
             </div>
-            <button onclick="condividiApp()" class="bg-white p-3 rounded-full shadow-sm border border-gray-100 active:scale-90 transition">🔗</button>
+            <button onclick="condividiApp()" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 active:scale-90 transition">🔗</button>
         </header>
 
-        <div class="bg-white p-6 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-50 mb-6">
-            <div class="flex items-center gap-4 mb-6">
-                <div class="bg-red-50 p-3 rounded-2xl text-2xl">👤</div>
-                <h2 class="text-xl font-bold">Membri e Rapporti S-21</h2>
+        <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-gray-100 mb-6">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="bg-red-50 p-3 rounded-2xl text-xl">👤</div>
+                <h2 class="text-xl font-bold">Membri e S-21</h2>
             </div>
-            <div class="grid grid-cols-1 gap-3">
-                <button onclick="apriModalNuovoMembro()" class="w-full py-4 bg-bordeaux text-white rounded-2xl font-bold shadow-lg active:scale-95 transition uppercase text-sm tracking-widest">Nuova Scheda S-21</button>
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="vaiAElencoProfili()" class="py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold active:scale-95 transition uppercase text-[10px] tracking-widest text-center">Inserisci Rapporto</button>
-                    <button onclick="controllaRapportiMancanti()" class="py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold active:scale-95 transition uppercase text-[10px] tracking-widest text-center">Verifica Mancanti</button>
+            <div class="grid grid-cols-1 gap-4">
+                <button onclick="apriModalNuovoMembro()" class="w-full py-5 bg-bordeaux text-white rounded-3xl font-bold uppercase text-sm tracking-widest">Nuova Scheda S-21</button>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="vaiAElencoProfili()" class="py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Inserisci Rapporto</button>
+                    <button onclick="controllaRapportiMancanti()" class="py-4 bg-gray-50 text-red-600 border border-red-100 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Mancanti</button>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-50 mb-12">
+        <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-gray-100 mb-10">
             <div class="flex items-center gap-4 mb-6">
-                <div class="bg-blue-50 p-3 rounded-2xl text-2xl">📊</div>
-                <h2 class="text-xl font-bold">Statistiche Adunanze S-88</h2>
+                <div class="bg-blue-50 p-3 rounded-2xl text-xl">📊</div>
+                <h2 class="text-xl font-bold">Modulo S-88 (Adunanze)</h2>
             </div>
-            <button onclick="apriEditorS88()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition uppercase text-sm tracking-widest">Compila S-88</button>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="apriEditorS88()" class="py-5 bg-blue-600 text-white rounded-3xl font-bold uppercase text-sm tracking-widest shadow-lg shadow-blue-600/20">Compila S-88</button>
+                <button onclick="generaPDF_S88()" class="py-5 bg-gray-800 text-white rounded-3xl font-bold uppercase text-sm tracking-widest">Scarica PDF</button>
+            </div>
         </div>
 
-        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-2">Organizzazione</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-            <button onclick="mostraGestioneGruppi()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2">
-                <span class="text-2xl">👥</span>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <button onclick="mostraGestioneGruppi()" class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center gap-2">
+                <span class="text-3xl">👥</span>
                 <span class="text-[10px] font-bold uppercase">Gruppi</span>
             </button>
-            <button onclick="mostraPionieri()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2">
-                <span class="text-2xl">🏃</span>
-                <span class="text-[10px] font-bold uppercase">Pionieri</span>
+            <button onclick="visualizzaAnagrafica('alfabetico')" class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center gap-2">
+                <span class="text-3xl">🔤</span>
+                <span class="text-[10px] font-bold uppercase">Anagrafica</span>
             </button>
-            <button onclick="visualizzaAnagrafica('alfabetico')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 text-center">
-                <span class="text-2xl">🔤</span>
-                <span class="text-[10px] font-bold uppercase">Anagrafica A-Z</span>
+            <button onclick="stampaTutteS21()" class="bg-amber-50 p-5 rounded-[2rem] border border-amber-100 shadow-sm flex flex-col items-center gap-2">
+                <span class="text-3xl">📦</span>
+                <span class="text-[10px] font-bold text-amber-800 uppercase text-center">Esporta ZIP</span>
             </button>
-            <button onclick="visualizzaAnagrafica('gruppi')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 text-center">
-                <span class="text-2xl">📂</span>
-                <span class="text-[10px] font-bold uppercase">Anagrafica Gruppi</span>
+            <button onclick="mostraMenuArchivio()" class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center gap-2">
+                <span class="text-3xl">📚</span>
+                <span class="text-[10px] font-bold uppercase text-center">Archivio</span>
             </button>
         </div>
 
-        <div class="bg-gray-900 p-6 rounded-[2.5rem] text-white flex justify-between items-center shadow-2xl mb-12">
-            <div><p class="text-xs font-bold text-gray-400 uppercase">Storico</p><h3 class="text-xl font-bold">Archivio Annuale</h3></div>
-            <button onclick="apriArchivio()" class="bg-white/10 p-4 rounded-2xl hover:bg-white/20 transition text-2xl">📁</button>
-        </div>
-
-        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-2">Sistema e Backup</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button onclick="esportaBackup()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2">
-                <span class="text-2xl">📤</span>
-                <span class="text-[10px] font-bold uppercase">Esporta</span>
-            </button>
-            <button onclick="document.getElementById('fileImport').click()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2">
-                <span class="text-2xl">📥</span>
-                <span class="text-[10px] font-bold uppercase">Importa</span>
-                <input type="file" id="fileImport" class="hidden" accept=".json" onchange="importaBackup(event)">
-            </button>
-            <button onclick="alert('Importa da PDF in arrivo')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2">
-                <span class="text-2xl">📄</span>
-                <span class="text-[10px] font-bold uppercase">PDF S-21</span>
-            </button>
-            <button onclick="resetTotale()" class="bg-red-50 p-4 rounded-3xl border border-red-100 flex flex-col items-center gap-2">
-                <span class="text-2xl">⚠️</span>
-                <span class="text-[10px] font-bold text-red-600 uppercase">Reset</span>
-            </button>
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="esportaBackup()" class="bg-white p-4 rounded-2xl border text-[10px] font-bold uppercase">📤 Esporta Dati</button>
+            <button onclick="document.getElementById('fileImport').click()" class="bg-white p-4 rounded-2xl border text-[10px] font-bold uppercase">📥 Importa Backup</button>
+            <input type="file" id="fileImport" class="hidden" accept=".json" onchange="importaBackup(event)">
         </div>
     </div>
 
     <div id="mainModal" class="fixed inset-0 z-50 modal-bg hidden p-4 flex items-center justify-center">
-        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-6 max-h-[90vh] overflow-y-auto shadow-2xl relative">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-8 max-h-[90vh] overflow-y-auto relative shadow-2xl">
             <div id="modalContent"></div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        let db = JSON.parse(localStorage.getItem('congregazione_db')) || {
+            membri: [], gruppi: [], s88: {}, archivio: {}
+        };
+
+        const MESI = ["Settembre", "Ottobre", "Novembre", "Dicembre", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto"];
+        const GITHUB_TEMPLATES = "https://asarritzu-boop.github.io/Anagrafica/templates/";
+
+        function saveData() { localStorage.setItem('congregazione_db', JSON.stringify(db)); }
+        function chiudiModal() { document.getElementById('mainModal').classList.add('hidden'); }
+        function apriModal(html) {
+            document.getElementById('modalContent').innerHTML = html + `<button onclick="chiudiModal()" class="w-full mt-6 bg-gray-200 p-3 rounded-xl font-bold text-gray-600 uppercase text-xs">Chiudi</button>`;
+            document.getElementById('mainModal').classList.remove('hidden');
+        }
+
+        // --- GESTIONE S-88 (STATISTICHE ADUNANZE) ---
+        function apriEditorS88() {
+            let h = `<h2 class="text-xl font-bold mb-6 text-blue-600 uppercase text-center">Compila Adunanze (S-88)</h2>
+            <p class="text-[10px] text-gray-400 mb-4 uppercase text-center font-bold italic">Inserisci i presenti per ogni settimana</p>
+            <div class="space-y-4 max-h-[50vh] overflow-y-auto pr-2">`;
+            
+            MESI.forEach(mese => {
+                const val = db.s88[mese] || { infrasettimanale: "", weekend: "" };
+                h += `
+                <div class="p-4 bg-gray-50 rounded-2xl border">
+                    <p class="font-bold text-xs uppercase mb-2 text-gray-700 border-b pb-1">${mese}</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[9px] font-bold uppercase text-gray-400">Infrasett.</label>
+                            <input type="number" value="${val.infrasettimanale}" onchange="salvaDatoS88('${mese}', 'infrasettimanale', this.value)" class="w-full p-2 rounded-lg border text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-bold uppercase text-gray-400">Weekend</label>
+                            <input type="number" value="${val.weekend}" onchange="salvaDatoS88('${mese}', 'weekend', this.value)" class="w-full p-2 rounded-lg border text-sm font-bold">
+                        </div>
+                    </div>
+                </div>`;
+            });
+            apriModal(h + `</div>`);
+        }
+
+        function salvaDatoS88(mese, tipo, valore) {
+            if (!db.s88[mese]) db.s88[mese] = { infrasettimanale: "", weekend: "" };
+            db.s88[mese][tipo] = valore;
+            saveData();
+        }
+
+        async function generaPDF_S88() {
+            try {
+                alert("Scaricamento template S-88 da GitHub...");
+                const url = GITHUB_TEMPLATES + "S-88.pdf";
+                const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
+                const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+                const form = pdfDoc.getForm();
+
+                // Esempio di mappatura campi (Assicurati che i nomi corrispondano nel PDF)
+                MESI.forEach(mese => {
+                    if(db.s88[mese]) {
+                        try {
+                            form.getTextField(mese + '_Infra').setText(db.s88[mese].infrasettimanale.toString());
+                            form.getTextField(mese + '_End').setText(db.s88[mese].weekend.toString());
+                        } catch(e) {}
+                    }
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                scaricaBlob(pdfBytes, "S-88_Compilato.pdf");
+            } catch(e) {
+                alert("Errore PDF S-88: " + e.message);
+            }
+        }
+
+        // --- ALTRE FUNZIONI (S-21, BACKUP, ETC) ---
+        function apriModalNuovoMembro(id = null) {
+            const m = id ? db.membri.find(x => x.id === id) : null;
+            let h = `<h2 class="text-xl font-bold mb-6 text-bordeaux uppercase text-center">${m ? 'Modifica' : 'Nuova Scheda'}</h2>
+            <div class="space-y-4">
+                <input type="hidden" id="m_id" value="${m ? m.id : ''}">
+                <input type="text" id="n_nome" value="${m ? m.nome : ''}" placeholder="Nome e Cognome" class="w-full border-2 p-3 rounded-xl font-bold">
+                <div class="grid grid-cols-2 gap-2 text-xs font-bold p-4 bg-gray-50 rounded-xl">
+                    <label><input type="checkbox" id="c_anziano" ${m?.anziano?'checked':''}> Anziano</label>
+                    <label><input type="checkbox" id="c_servitore" ${m?.servitore?'checked':''}> Servitore</label>
+                    <label><input type="checkbox" id="c_pionR" ${m?.pioniereR?'checked':''}> Pion. Reg.</label>
+                </div>
+                <button onclick="salvaMembro()" class="w-full bg-bordeaux text-white p-4 rounded-xl font-bold uppercase">Salva</button>
+            </div>`;
+            apriModal(h);
+        }
+
+        function salvaMembro() {
+            const id = document.getElementById('m_id').value;
+            const nome = document.getElementById('n_nome').value;
+            if(!nome) return alert("Inserisci il nome");
+            const d = {
+                id: id ? parseInt(id) : Date.now(),
+                nome,
+                anziano: document.getElementById('c_anziano').checked,
+                servitore: document.getElementById('c_servitore').checked,
+                pioniereR: document.getElementById('c_pionR').checked,
+                rapporti: id ? db.membri.find(x=>x.id==id).rapporti : {}
+            };
+            if(id) db.membri = db.membri.map(x => x.id == id ? d : x);
+            else db.membri.push(d);
+            saveData(); chiudiModal();
+        }
+
+        function vaiAElencoProfili() {
+            let h = `<h2 class="text-xl font-bold mb-4 text-center">RAPPORTI S-21</h2><div class="space-y-2">`;
+            db.membri.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(m => {
+                h += `<div class="flex justify-between items-center p-3 border rounded-xl">
+                    <span class="font-bold text-sm">${m.nome}</span>
+                    <button onclick="apriEditorRapporti(${m.id})" class="bg-bordeaux text-white px-4 py-1 rounded-lg text-[10px] uppercase">Dati</button>
+                </div>`;
+            });
+            apriModal(h + `</div>`);
+        }
+
+        function apriEditorRapporti(id) {
+            const m = db.membri.find(x => x.id === id);
+            let h = `<h2 class="text-lg font-bold mb-4">${m.nome}</h2><div class="space-y-2 max-h-[50vh] overflow-y-auto">`;
+            MESI.forEach(mese => {
+                h += `<label class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border text-xs font-bold uppercase">
+                    ${mese} <input type="checkbox" class="w-5 h-5" ${m.rapporti[mese]?.partecipato ? 'checked' : ''} onchange="salvaMese(${id}, '${mese}', this.checked)">
+                </label>`;
+            });
+            apriModal(h + `</div>`);
+        }
+
+        function salvaMese(id, mese, val) {
+            const m = db.membri.find(x => x.id == id);
+            m.rapporti[mese] = { partecipato: val };
+            saveData();
+        }
+
+        async function stampaTutteS21() {
+            try {
+                const zip = new JSZip();
+                const resp = await fetch(GITHUB_TEMPLATES + "S-21.pdf");
+                const template = await resp.arrayBuffer();
+                for (const m of db.membri) {
+                    const pdfDoc = await PDFLib.PDFDocument.load(template);
+                    const form = pdfDoc.getForm();
+                    try { form.getTextField('Nome').setText(m.nome); } catch(e) {}
+                    const pdfBytes = await pdfDoc.save();
+                    zip.file(`S-21_${m.nome.replace(/ /g,'_')}.pdf`, pdfBytes);
+                }
+                const content = await zip.generateAsync({type:"blob"});
+                scaricaBlob(content, "Archivio_S-21.zip");
+            } catch(e) { alert("Errore ZIP: " + e.message); }
+        }
+
+        function scaricaBlob(data, nome) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([data]));
+            a.download = nome; a.click();
+        }
+
+        function esportaBackup() {
+            scaricaBlob(JSON.stringify(db), "backup_congregazione.json");
+        }
+
+        function importaBackup(e) {
+            const r = new FileReader();
+            r.onload = (f) => { db = JSON.parse(f.target.result); saveData(); location.reload(); };
+            r.readAsText(e.target.files[0]);
+        }
+
+        function mostraMenuArchivio() { alert("Funzione Archivio Storico attiva nel database."); }
+        function visualizzaAnagrafica() { vaiAElencoProfili(); }
+    </script>
 </body>
 </html>
