@@ -2,95 +2,117 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anagrafica Congregazione S-21/S-88</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Anagrafica Congregazione</title>
     
-    <meta name="theme-color" content="#800020">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icona-192.png">
-    <meta property="og:type" content="website">
-<meta property="og:url" content="https://asarritzu-boop.github.io/Anagrafica/">
-<meta property="og:title" content="Anagrafica Congregazione S-21 / S-88">
-<meta property="og:description" content="Gestione locale rapporti di servizio e statistiche adunanze.">
-<meta property="og:image" content="https://asarritzu-boop.github.io/Anagrafica/icona.png">
-
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { bordeaux: '#800020' } } }
+        }
+    </script>
+    
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
-        :root { --bordeaux: #800020; }
-        .bg-bordeaux { background-color: var(--bordeaux); }
-        .text-bordeaux { color: var(--bordeaux); }
-        .border-bordeaux { border-color: var(--bordeaux); }
-        .btn-card { border-top: 4px solid var(--bordeaux); transition: 0.2s; cursor: pointer; }
-        .btn-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .modal-overlay { background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); }
+        body { -webkit-tap-highlight-color: transparent; }
+        .modal-bg { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-50 text-gray-900 font-sans no-scrollbar pb-10">
 
-    <nav class="bg-bordeaux text-white p-4 shadow-xl sticky top-0 z-50">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <img src="icona-192.png" alt="Logo" class="w-10 h-10 rounded-lg border border-white/20">
-                <h1 class="text-xl font-bold">Anagrafica S-21 & S-88</h1>
+    <div class="max-w-4xl mx-auto p-6">
+        <header class="flex justify-between items-center mb-10">
+            <div class="flex items-center gap-4">
+                <img src="icona.png" alt="Logo" class="w-12 h-12 rounded-2xl shadow-lg border-2 border-white object-cover">
+                <div>
+                    <h1 class="text-3xl font-black text-bordeaux tracking-tight uppercase">Dashboard</h1>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">S-21 & S-88</p>
+                </div>
             </div>
-            <button onclick="condividiApp()" class="bg-white/20 px-4 py-1 rounded-full text-sm font-medium">Condividi 🔗</button>
-        </div>
-    </nav>
+            <button onclick="condividiApp()" class="bg-white p-3 rounded-full shadow-sm border border-gray-100 active:scale-90 transition">🔗</button>
+        </header>
 
-    <main class="max-w-4xl mx-auto p-4 space-y-6">
-        
-        <section onclick="apriModalNuovoMembro()" class="bg-white p-8 rounded-2xl shadow-sm border-2 border-dashed border-bordeaux text-center cursor-pointer hover:bg-red-50 transition">
-            <span class="text-bordeaux font-black text-xl uppercase tracking-widest">+ AGGIUNGI COMPONENTE ALLA CONGREGAZIONE</span>
-        </section>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="btn-card bg-white p-6 rounded-xl shadow-md">
-                <h3 class="font-bold text-lg mb-4 text-gray-700">Anagrafica</h3>
-                <div class="space-y-2">
-                    <button onclick="stampaAlfabetico()" class="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex justify-between">Alfabetico <span>PDF ↓</span></button>
-                    <button onclick="stampaPerGruppi()" class="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex justify-between">Per Gruppi <span>PDF ↓</span></button>
-                    <button onclick="vaiAElencoProfili()" class="w-full mt-2 bg-bordeaux text-white p-3 rounded-lg font-bold shadow-lg">Compila Dati Mensili</button>
-                    <button onclick="apriArchivio()" class="w-full mt-2 border-2 border-bordeaux text-bordeaux p-3 rounded-lg font-bold hover:bg-red-50">🏛️ ARCHIVIO STORICO</button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            <div class="bg-white p-6 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-50">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="bg-red-50 p-3 rounded-2xl text-2xl">👤</div>
+                    <h2 class="text-xl font-bold">Membri e S-21</h2>
+                </div>
+                <div class="space-y-3">
+                    <button onclick="apriModalNuovoMembro()" class="w-full py-4 bg-bordeaux text-white rounded-2xl font-bold shadow-lg active:scale-95 transition uppercase text-sm tracking-widest">Nuova Scheda S-21</button>
+                    <button onclick="vaiAElencoProfili()" class="w-full py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold active:scale-95 transition uppercase text-sm tracking-widest">Compila Rapporti</button>
                 </div>
             </div>
 
-            <div class="btn-card bg-white p-6 rounded-xl shadow-md">
-                <h3 class="font-bold text-lg mb-4 text-gray-700">Organizzazione</h3>
-                <div class="space-y-2">
-                    <button onclick="mostraGestioneGruppi()" class="w-full bg-gray-100 p-3 rounded-lg text-left hover:bg-gray-200">Gruppi di Servizio</button>
-                    <button onclick="mostraPionieri()" class="w-full bg-gray-100 p-3 rounded-lg text-left hover:bg-gray-200">Gruppo Pionieri Regolari</button>
-                    <button onclick="apriEditorS88()" class="w-full mt-4 bg-gray-800 text-white p-3 rounded-lg font-bold">COMPILA S-88</button>
+            <div class="bg-white p-6 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-50">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="bg-blue-50 p-3 rounded-2xl text-2xl">📊</div>
+                    <h2 class="text-xl font-bold">Adunanze S-88</h2>
+                </div>
+                <div class="space-y-3">
+                    <button onclick="apriEditorS88()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition uppercase text-sm tracking-widest">Compila S-88</button>
+                    <button onclick="controllaRapportiMancanti()" class="w-full py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold active:scale-95 transition uppercase text-sm tracking-widest">Verifica Mancanti</button>
                 </div>
             </div>
         </div>
 
-        <section class="bg-white p-6 rounded-xl shadow-md border-t-4 border-red-600">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-red-700 uppercase">Rapporti Mancanti</h3>
-                <button onclick="controllaRapportiMancanti()" class="bg-red-600 text-white px-8 py-2 rounded-lg font-bold shadow-md">VERIFICA ORA</button>
-            </div>
-            <div id="mancantiResult" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
-        </section>
-
-        <div class="flex flex-wrap justify-center gap-6 py-6 border-t border-gray-200">
-            <button onclick="esportaBackup()" class="text-sm text-gray-500 hover:text-bordeaux font-medium">📤 Esporta Backup</button>
-            <label class="text-sm text-gray-500 hover:text-bordeaux font-medium cursor-pointer">
-                📥 Importa JSON <input type="file" id="importFile" class="hidden" onchange="importaBackup(event)">
-            </label>
-            <button onclick="document.getElementById('pdf-import').click()" class="text-sm text-blue-600 font-bold">📄 Importa da PDF</button>
-            <input type="file" id="pdf-import" class="hidden" accept="application/pdf" onchange="importaDatiDaPDF(event)">
+        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-2">Organizzazione</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            <button onclick="mostraGestioneGruppi()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 active:bg-gray-50">
+                <span class="text-2xl">👥</span>
+                <span class="text-[10px] font-bold uppercase">Gruppi</span>
+            </button>
+            <button onclick="mostraPionieri()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 active:bg-gray-50">
+                <span class="text-2xl">🏃</span>
+                <span class="text-[10px] font-bold uppercase">Pionieri</span>
+            </button>
+            <button onclick="visualizzaAnagrafica('alfabetico')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 text-center active:bg-gray-50">
+                <span class="text-2xl">🔤</span>
+                <span class="text-[10px] font-bold uppercase leading-tight">Anagrafica A-Z</span>
+            </button>
+            <button onclick="visualizzaAnagrafica('gruppi')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 text-center active:bg-gray-50">
+                <span class="text-2xl">📂</span>
+                <span class="text-[10px] font-bold uppercase leading-tight">Anagrafica Gruppi</span>
+            </button>
         </div>
-    </main>
 
-    <div id="mainModal" class="modal-overlay fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
-        <div id="modalContent" class="bg-white w-full max-w-2xl rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            </div>
+        <div class="bg-gray-900 p-6 rounded-[2.5rem] text-white flex justify-between items-center shadow-2xl mb-12">
+            <div><p class="text-xs font-bold text-gray-400 uppercase">Storico</p><h3 class="text-xl font-bold">Archivio Annuale</h3></div>
+            <button onclick="apriArchivio()" class="bg-white/10 p-4 rounded-2xl hover:bg-white/20 transition text-2xl">📁</button>
+        </div>
+
+        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-2">Sistema e Backup</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button onclick="esportaBackup()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 active:bg-gray-50">
+                <span class="text-2xl">📤</span>
+                <span class="text-[10px] font-bold uppercase">Esporta</span>
+            </button>
+            <button onclick="document.getElementById('fileImport').click()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 active:bg-gray-50">
+                <span class="text-2xl">📥</span>
+                <span class="text-[10px] font-bold uppercase">Importa</span>
+                <input type="file" id="fileImport" class="hidden" accept=".json" onchange="importaBackup(event)">
+            </button>
+            <button onclick="alert('Importa da PDF in arrivo')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 active:bg-gray-50">
+                <span class="text-2xl">📄</span>
+                <span class="text-[10px] font-bold uppercase">PDF S-21</span>
+            </button>
+            <button onclick="resetTotale()" class="bg-red-50 p-4 rounded-3xl border border-red-100 flex flex-col items-center gap-2 active:bg-red-100">
+                <span class="text-2xl">⚠️</span>
+                <span class="text-[10px] font-bold text-red-600 uppercase">Reset</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="mainModal" class="fixed inset-0 z-50 modal-bg hidden p-4 flex items-center justify-center">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-6 max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            <div id="modalContent"></div>
+        </div>
     </div>
 
     <script src="app.js"></script>
 </body>
 </html>
+
