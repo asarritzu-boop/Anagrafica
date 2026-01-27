@@ -6,13 +6,14 @@
     <meta name="theme-color" content="#800020">
     <title>Anagrafica Congregazione</title>
 
-    <link rel="manifest" href="data:application/manifest+json,{'name':'Anagrafica JW','short_name':'Anagrafica','start_url':'.','display':'standalone','background_color':'#800020','theme_color':'#800020','icons':[{'src':'icona-192.png','sizes':'192x192','type':'image/png'}]}">
+    <link rel="apple-touch-icon" href="icona-192.png">
+    <link rel="icon" type="image/png" href="icona-192.png">
+    
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Anagrafica JW","short_name":"Anagrafica","start_url":".","display":"standalone","background_color":"#800020","theme_color":"#800020","icons":[{"src":"icona-192.png","sizes":"192x192","type":"image/png"},{"src":"icona-512.png","sizes":"512x512","type":"image/png"}]}'>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -29,189 +30,159 @@
     <style>
         body { -webkit-tap-highlight-color: transparent; font-family: -apple-system, system-ui, sans-serif; overflow-x: hidden; }
         .hidden-page { display: none !important; }
-        .page-content { animation: fadeIn 0.2s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .active-tab { border-bottom: 3px solid #800020; color: #800020; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-up { animation: slideUp 0.3s ease-out; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 pb-24 select-none">
+<body class="bg-gray-100 text-gray-800 pb-24">
 
     <header class="bg-bordeaux text-white p-4 shadow-lg sticky top-0 z-50">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <img src="icona-192.png" alt="icon" class="w-8 h-8 rounded-lg border border-white/20 onerror="this.src='https://via.placeholder.com/192/800020/FFFFFF?text=JW'">
-                <div class="font-bold text-sm leading-tight uppercase tracking-wide">Anagrafica<br>Congregazione</div>
+            <div class="flex items-center gap-3">
+                <img src="icona-192.png" class="w-10 h-10 rounded-xl shadow-md border border-white/20" alt="Logo">
+                <div>
+                    <h1 class="font-black text-sm uppercase tracking-tighter">Congregazione</h1>
+                    <p class="text-[10px] opacity-80 uppercase">Gestione Anagrafica</p>
+                </div>
             </div>
-            <div id="installContainer" class="flex gap-2 items-center">
-                <button onclick="condividiApp()" class="bg-white/10 p-2 rounded-full hover:bg-white/20">
-                    <span class="text-lg">🔗</span>
-                </button>
-            </div>
+            <div id="pwa-install-zone"></div>
         </div>
     </header>
 
     <main class="max-w-2xl mx-auto p-4">
 
-        <div id="dashboard" class="page-content space-y-4">
-            <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-200">
-                <h2 class="text-bordeaux font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <span>👤</span> Membri & S-21
-                </h2>
-                <div class="space-y-3">
+        <div id="dashboard" class="page-content space-y-4 animate-up">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-bordeaux font-black text-xs uppercase tracking-widest">Anagrafica & S-21</h2>
+                    <span class="bg-bordeaux/10 text-bordeaux text-[10px] px-2 py-1 rounded-full font-bold" id="count-membri">0 MEMBRI</span>
+                </div>
+                
+                <div class="grid grid-cols-1 gap-3">
                     <button onclick="nuovaScheda()" class="w-full bg-bordeaux text-white py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition">
-                        + NUOVA SCHEDA S-21
+                        + AGGIUNGI PROCLAMATORE
                     </button>
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="alert('Funzionalità inserimento rapporti in arrivo')" class="bg-gray-50 text-gray-700 py-3 rounded-xl font-bold text-[10px] border uppercase">📝 Inserisci Rapp.</button>
-                        <button onclick="alert('Analisi rapporti mancanti in arrivo')" class="bg-red-50 text-red-700 py-3 rounded-xl font-bold text-[10px] border border-red-100 uppercase">⚠️ Mancanti</button>
+                        <button onclick="mostraPagina('page-anagrafica')" class="bg-gray-800 text-white py-4 rounded-2xl font-bold text-xs uppercase">Lista Completa</button>
+                        <button onclick="mostraPagina('page-pionieri')" class="bg-blue-700 text-white py-4 rounded-2xl font-bold text-xs uppercase">Pionieri</button>
                     </div>
-                    <button onclick="mostraPagina('page-anagrafica')" class="w-full bg-gray-50 text-bordeaux border border-gray-200 py-3 rounded-xl font-bold text-sm">🔤 APRI ANAGRAFICA COMPLETA</button>
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-200">
-                <h2 class="text-bordeaux font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <span>👥</span> Gruppi & Servizio
-                </h2>
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <button onclick="mostraPagina('page-gruppi')" class="bg-amber-500 text-white py-4 rounded-2xl font-bold text-xs uppercase shadow-md">📂 Lista Gruppi</button>
-                    <button onclick="mostraPagina('page-pionieri')" class="bg-blue-700 text-white py-4 rounded-2xl font-bold text-xs uppercase shadow-md">⭐ Pionieri</button>
-                </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+                <h2 class="text-bordeaux font-black text-xs uppercase tracking-widest mb-4">Servizio & Gruppi</h2>
                 <div class="grid grid-cols-2 gap-3">
-                    <button onclick="mostraPagina('page-archivio')" class="bg-gray-800 text-white py-3 rounded-xl font-bold text-[10px] uppercase">📁 Archivio Moduli</button>
-                    <button onclick="alert('Modulo S-88 caricato da templates/S-88_1.pdf')" class="bg-blue-100 text-blue-800 py-3 rounded-xl font-bold text-[10px] uppercase">📊 Modulo S-88</button>
+                    <button onclick="mostraPagina('page-gruppi')" class="bg-amber-500 text-white py-4 rounded-2xl font-bold text-xs uppercase shadow-md">Gruppi</button>
+                    <button onclick="scaricaS88()" class="bg-emerald-600 text-white py-4 rounded-2xl font-bold text-xs uppercase shadow-md">Modulo S-88</button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="esportaDati()" class="bg-white p-4 rounded-2xl border text-center active:bg-gray-50">
-                    <div class="text-xl">📤</div>
-                    <div class="text-[10px] font-bold uppercase mt-1">Backup Dati</div>
-                </button>
-                <label class="bg-white p-4 rounded-2xl border text-center cursor-pointer active:bg-gray-50">
-                    <div class="text-xl">📥</div>
-                    <div class="text-[10px] font-bold uppercase mt-1">Importa Dati</div>
-                    <input type="file" class="hidden" accept=".json" onchange="importaDati(event)">
-                </label>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+                <h2 class="text-bordeaux font-black text-xs uppercase tracking-widest mb-4">Backup & Archivio</h2>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="esportaDati()" class="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-2xl hover:bg-gray-50">
+                        <span class="text-xl">📤</span>
+                        <span class="text-[10px] font-bold uppercase">Esporta</span>
+                    </button>
+                    <label class="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-2xl hover:bg-gray-50 cursor-pointer">
+                        <span class="text-xl">📥</span>
+                        <span class="text-[10px] font-bold uppercase">Importa</span>
+                        <input type="file" class="hidden" accept=".json" onchange="importaDati(event)">
+                    </label>
+                </div>
+                <button onclick="mostraPagina('page-archivio')" class="w-full mt-4 py-3 text-gray-500 font-bold text-xs uppercase">Archivio Esportazioni ZIP</button>
             </div>
         </div>
 
-        <div id="page-anagrafica" class="page-content hidden-page bg-white min-h-[80vh] rounded-t-3xl shadow-2xl mt-4">
-            <div class="sticky top-0 bg-gray-50 p-4 rounded-t-3xl border-b flex justify-between items-center z-10">
-                <button onclick="tornaHome()" class="bg-gray-200 px-4 py-2 rounded-xl font-bold text-xs">← INDIETRO</button>
-                <h2 class="font-bold text-bordeaux uppercase">Anagrafica</h2>
-                <button onclick="window.print()" class="bg-white border p-2 rounded-lg text-lg">📄</button>
+        <div id="page-anagrafica" class="page-content hidden-page animate-up">
+            <div class="flex items-center gap-4 mb-6">
+                <button onclick="tornaHome()" class="p-2 bg-white rounded-full shadow-sm">⬅️</button>
+                <h2 class="font-black text-bordeaux uppercase">Elenco Membri</h2>
             </div>
-            <div id="lista-anagrafica" class="p-4 space-y-2"></div>
+            <div id="lista-membri-cont" class="space-y-3"></div>
         </div>
 
-        <div id="page-gruppi" class="page-content hidden-page bg-white min-h-[80vh] rounded-t-3xl shadow-2xl mt-4">
-            <div class="sticky top-0 bg-gray-50 p-4 rounded-t-3xl border-b flex justify-between items-center z-10">
-                <button onclick="tornaHome()" class="bg-gray-200 px-4 py-2 rounded-xl font-bold text-xs">← INDIETRO</button>
-                <h2 class="font-bold text-amber-600 uppercase">Gruppi</h2>
-                <button onclick="aggiungiGruppo()" class="bg-amber-500 text-white px-3 py-2 rounded-xl font-bold text-xs">+ GRUPPO</button>
+        <div id="page-gruppi" class="page-content hidden-page animate-up">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-4">
+                    <button onclick="tornaHome()" class="p-2 bg-white rounded-full shadow-sm">⬅️</button>
+                    <h2 class="font-black text-amber-600 uppercase">Gruppi di Servizio</h2>
+                </div>
+                <button onclick="creaGruppo()" class="bg-amber-500 text-white px-4 py-2 rounded-xl text-xs font-bold">+ NUOVO</button>
             </div>
-            <div id="lista-gruppi" class="p-4 space-y-3"></div>
+            <div id="lista-gruppi-cont" class="space-y-4"></div>
         </div>
 
-        <div id="page-pionieri" class="page-content hidden-page bg-white min-h-[80vh] rounded-t-3xl shadow-2xl mt-4">
-            <div class="sticky top-0 bg-blue-700 text-white p-4 rounded-t-3xl border-b flex justify-between items-center z-10">
-                <button onclick="tornaHome()" class="bg-white/20 px-3 py-2 rounded-xl font-bold text-[10px]">← CHIUDI</button>
-                <h2 class="font-bold uppercase text-sm">Pionieri Regolari</h2>
-                <button onclick="zipPionieri()" class="bg-white text-blue-700 px-3 py-2 rounded-xl font-bold text-[10px] uppercase">📦 ZIP</button>
-            </div>
-            <div id="lista-pionieri" class="p-4 space-y-2"></div>
-        </div>
-
-        <div id="page-archivio" class="page-content hidden-page bg-white min-h-[80vh] rounded-t-3xl shadow-2xl mt-4">
-            <div class="sticky top-0 bg-gray-800 text-white p-4 rounded-t-3xl border-b flex justify-between items-center z-10">
-                <button onclick="tornaHome()" class="bg-white/20 px-3 py-2 rounded-xl font-bold text-[10px]">← CHIUDI</button>
-                <h2 class="font-bold uppercase text-sm">Archivio Documenti</h2>
-            </div>
-            <div class="p-6">
-                <button onclick="zipTutti()" class="w-full py-4 bg-bordeaux text-white rounded-2xl font-bold shadow-lg">SCARICA TUTTE LE S-21 (.ZIP)</button>
-            </div>
-        </div>
     </main>
 
-    <div id="modal" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div class="p-4 border-b flex justify-between items-center bg-gray-50">
-                <h3 id="modalTitle" class="font-bold text-lg text-bordeaux">Dettagli</h3>
-                <button onclick="chiudiModal()" class="w-10 h-10 rounded-full bg-gray-200 font-bold flex items-center justify-center">✕</button>
+    <div id="modal" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm hidden p-4 flex items-center justify-center">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-up">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 id="modalTitle" class="font-bold text-bordeaux"></h3>
+                <button onclick="chiudiModal()" class="text-2xl">&times;</button>
             </div>
-            <div id="modalBody" class="p-6 overflow-y-auto"></div>
+            <div id="modalBody" class="p-6 overflow-y-auto max-h-[70vh]"></div>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURAZIONE ---
-        // Ora punta alla cartella 'templates/'
-        const BASE_TEMPLATE_URL = "templates/"; 
-        const FILES = { s21: "S-21_I.pdf", s88: "S-88_1.pdf" };
+        // --- CONFIGURAZIONE FILE ---
+        const PATH_S21 = "templates/S-21_I.pdf";
+        const PATH_S88 = "templates/S-88_I.pdf";
 
-        let db = JSON.parse(localStorage.getItem('jw_anagrafica_db')) || { membri: [], gruppi: [] };
+        let db = JSON.parse(localStorage.getItem('jw_data')) || { membri: [], gruppi: [] };
 
-        function salvaDB() { 
-            localStorage.setItem('jw_anagrafica_db', JSON.stringify(db)); 
+        function salva() {
+            localStorage.setItem('jw_data', JSON.stringify(db));
+            aggiornaContatori();
         }
 
-        // --- GESTIONE PWA (INSTALLAZIONE) ---
-        let deferredPrompt;
+        function aggiornaContatori() {
+            document.getElementById('count-membri').innerText = `${db.membri.length} MEMBRI`;
+        }
+
+        // --- PWA LOGIC ---
+        let installPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
-            deferredPrompt = e;
-            const container = document.getElementById('installContainer');
-            const installBtn = document.createElement('button');
-            installBtn.className = "bg-white text-bordeaux px-3 py-1 rounded-full font-bold text-[10px] uppercase shadow-md mr-2";
-            installBtn.innerText = "Installa App";
-            installBtn.onclick = async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') container.removeChild(installBtn);
-                    deferredPrompt = null;
-                }
-            };
-            container.prepend(installBtn);
+            installPrompt = e;
+            document.getElementById('pwa-install-zone').innerHTML = `
+                <button onclick="avviaInstallazione()" class="bg-white text-bordeaux px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase shadow-md">
+                    Installa App
+                </button>`;
         });
 
-        // --- NAVIGAZIONE ---
-        function mostraPagina(pageId) {
-            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden-page'));
-            document.getElementById(pageId).classList.remove('hidden-page');
-            if(pageId === 'page-anagrafica') renderAnagrafica();
-            if(pageId === 'page-gruppi') renderGruppi();
-            if(pageId === 'page-pionieri') renderPionieri();
+        async function avviaInstallazione() {
+            if (!installPrompt) return;
+            installPrompt.prompt();
+            const { outcome } = await installPrompt.userChoice;
+            if (outcome === 'accepted') document.getElementById('pwa-install-zone').innerHTML = '';
+            installPrompt = null;
         }
 
-        function tornaHome() {
-            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden-page'));
-            document.getElementById('dashboard').classList.remove('hidden-page');
-        }
-
-        // --- FUNZIONI MEMBRI ---
+        // --- GESTIONE MEMBRI ---
         function nuovaScheda() {
+            const gruppiHtml = db.gruppi.map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
             const html = `
                 <form onsubmit="salvaMembro(event)" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="text" name="cognome" placeholder="Cognome" class="w-full p-3 border rounded-xl" required>
-                        <input type="text" name="nome" placeholder="Nome" class="w-full p-3 border rounded-xl" required>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" name="cognome" placeholder="Cognome" class="p-3 border rounded-xl w-full" required>
+                        <input type="text" name="nome" placeholder="Nome" class="p-3 border rounded-xl w-full" required>
                     </div>
-                    <input type="text" name="indirizzo" placeholder="Indirizzo" class="w-full p-3 border rounded-xl">
-                    <input type="text" name="telefono" placeholder="Telefono" class="w-full p-3 border rounded-xl">
-                    <input type="date" name="nascita" class="w-full p-3 border rounded-xl">
-                    <select name="gruppoId" class="w-full p-3 border rounded-xl">
-                        <option value="">Seleziona Gruppo</option>
-                        ${db.gruppi.map(g => `<option value="${g.id}">${g.nome}</option>`).join('')}
+                    <input type="text" name="indirizzo" placeholder="Indirizzo" class="p-3 border rounded-xl w-full">
+                    <select name="gruppo" class="p-3 border rounded-xl w-full">
+                        <option value="">Nessun Gruppo</option>
+                        ${gruppiHtml}
                     </select>
-                    <div class="flex items-center gap-4 bg-gray-50 p-3 rounded-xl">
-                        <label class="flex items-center gap-2 text-xs font-bold"><input type="checkbox" name="pioniereR"> PIONIERE REG.</label>
-                        <label class="flex items-center gap-2 text-xs font-bold"><input type="checkbox" name="unto"> UNTO</label>
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                        <input type="checkbox" id="pioniere" name="pioniere" class="w-5 h-5 accent-bordeaux">
+                        <label for="pioniere" class="font-bold text-xs uppercase">Pioniere Regolare</label>
                     </div>
-                    <button type="submit" class="w-full bg-bordeaux text-white py-4 rounded-2xl font-bold shadow-lg">SALVA NELL'ANAGRAFICA</button>
+                    <button type="submit" class="w-full bg-bordeaux text-white py-4 rounded-2xl font-bold uppercase">Salva Anagrafica</button>
                 </form>
             `;
-            apriModal("Nuova Scheda S-21", html);
+            apriModal("Nuovo Proclamatore", html);
         }
 
         function salvaMembro(e) {
@@ -222,126 +193,80 @@
                 cognome: fd.get('cognome'),
                 nome: fd.get('nome'),
                 indirizzo: fd.get('indirizzo'),
-                telefono: fd.get('telefono'),
-                nascita: fd.get('nascita'),
-                gruppoId: fd.get('gruppoId'),
-                privilegi: { pioniereR: fd.get('pioniereR') === 'on', unto: fd.get('unto') === 'on' }
+                gruppoId: fd.get('gruppo'),
+                isPioniere: fd.get('pioniere') === 'on'
             };
             db.membri.push(nuovo);
-            salvaDB();
+            salva();
             chiudiModal();
-            alert("Salvato correttamente!");
+            if(confirm("Dati salvati. Vuoi scaricare ora la cartolina S-21?")) {
+                compilaS21(nuovo);
+            }
         }
 
         function renderAnagrafica() {
-            const cont = document.getElementById('lista-anagrafica');
-            cont.innerHTML = db.membri.length ? "" : "<p class='text-center text-gray-400 py-10'>Nessun membro inserito.</p>";
+            const cont = document.getElementById('lista-membri-cont');
+            cont.innerHTML = "";
             db.membri.sort((a,b) => a.cognome.localeCompare(b.cognome)).forEach(m => {
                 cont.innerHTML += `
-                    <div class="flex justify-between items-center p-4 bg-white border rounded-2xl shadow-sm mb-2">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border flex justify-between items-center">
                         <div>
-                            <div class="font-bold">${m.cognome} ${m.nome}</div>
-                            <div class="text-[10px] text-gray-400 uppercase font-bold">${m.privilegi.pioniereR ? '⭐ Pioniere' : 'Proclamatore'}</div>
+                            <p class="font-bold text-sm">${m.cognome} ${m.nome}</p>
+                            <p class="text-[10px] text-gray-400 uppercase">${m.isPioniere ? '⭐ Pioniere' : 'Proclamatore'}</p>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="scaricaSingolaS21(${m.id})" class="p-2 bg-gray-100 rounded-lg">📄</button>
+                            <button onclick='compilaS21(${JSON.stringify(m)})' class="p-2 bg-gray-100 rounded-lg">📄</button>
                             <button onclick="eliminaMembro(${m.id})" class="p-2 bg-red-50 text-red-500 rounded-lg">🗑️</button>
                         </div>
                     </div>`;
             });
         }
 
-        function eliminaMembro(id) {
-            if(confirm("Vuoi davvero eliminare questo membro?")) {
-                db.membri = db.membri.filter(m => m.id !== id);
-                salvaDB();
-                renderAnagrafica();
-            }
-        }
-
-        // --- GESTIONE PDF (Cartella Templates) ---
-        async function scaricaSingolaS21(mid) {
-            const m = db.membri.find(x => x.id === mid);
+        // --- GESTIONE PDF (S-21 e S-88) ---
+        async function compilaS21(membro) {
             try {
-                const url = BASE_TEMPLATE_URL + FILES.s21;
-                const bytes = await fetch(url).then(res => {
-                    if(!res.ok) throw new Error("File non trovato in /templates/");
-                    return res.arrayBuffer();
-                });
-                
-                const pdfDoc = await PDFLib.PDFDocument.load(bytes);
+                const existingPdfBytes = await fetch(PATH_S21).then(res => res.arrayBuffer());
+                const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
                 const form = pdfDoc.getForm();
-                
-                // Compilazione campi basata su nomi standard S-21
-                form.getTextField('Nome e cognome').setText(`${m.cognome} ${m.nome}`);
-                if(m.indirizzo) try { form.getTextField('Indirizzo').setText(m.indirizzo); } catch(e){}
-                if(m.telefono) try { form.getTextField('Telefono').setText(m.telefono); } catch(e){}
-                
+
+                // Mappatura campi PDF (assicurati che i nomi corrispondano nel file PDF)
+                form.getTextField('Nome e cognome').setText(`${membro.cognome} ${membro.nome}`);
+                if(membro.indirizzo) try { form.getTextField('Indirizzo').setText(membro.indirizzo); } catch(e){}
+
                 const pdfBytes = await pdfDoc.save();
-                scaricaBlob(pdfBytes, `S-21_${m.cognome}.pdf`);
-            } catch(e) {
-                alert("Errore: verifica che il file S-21_I.pdf sia nella cartella 'templates'");
-                console.error(e);
+                scaricaFile(pdfBytes, `S-21_${membro.cognome}.pdf`, "application/pdf");
+            } catch (err) {
+                alert("Errore nel caricamento del file S-21_I.pdf dalla cartella templates/");
+                console.error(err);
             }
         }
 
-        async function zipTutti() {
-            if(!db.membri.length) return alert("Anagrafica vuota!");
-            const zip = new JSZip();
-            const templateBytes = await fetch(BASE_TEMPLATE_URL + FILES.s21).then(res => res.arrayBuffer());
-
-            for(const m of db.membri) {
-                const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
-                const form = pdfDoc.getForm();
-                form.getTextField('Nome e cognome').setText(`${m.cognome} ${m.nome}`);
-                const pdfBytes = await pdfDoc.save();
-                zip.file(`${m.cognome}_${m.nome}.pdf`, pdfBytes);
-            }
-            const content = await zip.generateAsync({type:"blob"});
-            scaricaBlob(content, "Tutte_le_S21.zip");
-        }
-
-        // --- GRUPPI ---
-        function aggiungiGruppo() {
-            const nome = prompt("Nome Gruppo (es: Gruppo 3):");
-            if(nome) {
-                db.gruppi.push({ id: Date.now(), nome: nome });
-                salvaDB();
-                renderGruppi();
-            }
-        }
-
-        function renderGruppi() {
-            const cont = document.getElementById('lista-gruppi');
-            cont.innerHTML = "";
-            db.gruppi.forEach(g => {
-                const n = db.membri.filter(m => m.gruppoId == g.id).length;
-                cont.innerHTML += `<div class="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex justify-between items-center">
-                    <div><span class="font-bold">${g.nome}</span> <span class="text-[10px] text-amber-600 ml-2">(${n} membri)</span></div>
-                    <button onclick="eliminaGruppo(${g.id})" class="text-xs text-red-400">Rimuovi</button>
-                </div>`;
-            });
+        async function scaricaS88() {
+            try {
+                const bytes = await fetch(PATH_S88).then(res => res.arrayBuffer());
+                scaricaFile(bytes, "S-88_I.pdf", "application/pdf");
+            } catch (err) { alert("File S-88_I.pdf non trovato in templates/"); }
         }
 
         // --- UTILS ---
-        function scaricaBlob(data, nome) {
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([data]));
-            a.download = nome; a.click();
+        function scaricaFile(data, nome, tipo) {
+            const blob = new Blob([data], { type: tipo });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = nome;
+            link.click();
         }
 
-        function esportaDati() {
-            scaricaBlob(JSON.stringify(db), `backup_jw_${new Date().toISOString().split('T')[0]}.json`);
+        function mostraPagina(id) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden-page'));
+            document.getElementById(id).classList.remove('hidden-page');
+            if(id === 'page-anagrafica') renderAnagrafica();
+            if(id === 'page-gruppi') renderGruppi();
         }
 
-        function importaDati(e) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                db = JSON.parse(event.target.result);
-                salvaDB();
-                location.reload();
-            };
-            reader.readAsText(e.target.files[0]);
+        function tornaHome() {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden-page'));
+            document.getElementById('dashboard').classList.remove('hidden-page');
         }
 
         function apriModal(titolo, html) {
@@ -352,25 +277,27 @@
 
         function chiudiModal() { document.getElementById('modal').classList.add('hidden'); }
 
-        async function condividiApp() {
-            if (navigator.share) {
-                await navigator.share({ title: 'Anagrafica', url: window.location.href });
-            } else {
-                window.open(`https://wa.me/?text=${encodeURIComponent(window.location.href)}`);
-            }
+        function esportaDati() {
+            const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_congregazione_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
         }
 
-        function renderPionieri() {
-            const cont = document.getElementById('lista-pionieri');
-            cont.innerHTML = "";
-            db.membri.filter(m => m.privilegi.pioniereR).forEach(p => {
-                cont.innerHTML += `
-                    <div class="flex justify-between items-center p-3 bg-blue-50 border rounded-xl">
-                        <span class="font-bold text-blue-900">${p.cognome} ${p.nome}</span>
-                        <button onclick="scaricaSingolaS21(${p.id})" class="text-[10px] bg-white border px-3 py-1 rounded-lg">Scarica S-21</button>
-                    </div>`;
-            });
+        function importaDati(e) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                db = JSON.parse(event.target.result);
+                salva();
+                location.reload();
+            };
+            reader.readAsText(e.target.files[0]);
         }
+
+        // Caricamento iniziale
+        aggiornaContatori();
     </script>
 </body>
 </html>
