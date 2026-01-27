@@ -35,47 +35,45 @@
             <button onclick="condividiApp()" class="bg-white p-3 rounded-full shadow-sm border border-gray-100 active:scale-90 transition">🔗</button>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-            <div class="bg-white p-6 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-50">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="bg-red-50 p-3 rounded-2xl text-2xl">👤</div>
-                    <h2 class="text-xl font-bold">Membri e S-21</h2>
-                </div>
-                <div class="space-y-3">
-                    <button onclick="apriModalNuovoMembro()" class="w-full py-4 bg-bordeaux text-white rounded-2xl font-bold shadow-lg active:scale-95 transition uppercase text-sm tracking-widest">Nuova Scheda S-21</button>
-                    <button onclick="vaiAElencoProfili()" class="w-full py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold active:scale-95 transition uppercase text-sm tracking-widest">Compila Rapporti</button>
-                </div>
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-50 mb-6">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="bg-red-50 p-3 rounded-2xl text-2xl">👤</div>
+                <h2 class="text-xl font-bold">Membri e Rapporti S-21</h2>
             </div>
-
-            <div class="bg-white p-6 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-50">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="bg-blue-50 p-3 rounded-2xl text-2xl">📊</div>
-                    <h2 class="text-xl font-bold">Adunanze S-88</h2>
-                </div>
-                <div class="space-y-3">
-                    <button onclick="apriEditorS88()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition uppercase text-sm tracking-widest">Compila S-88</button>
-                    <button onclick="controllaRapportiMancanti()" class="w-full py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold active:scale-95 transition uppercase text-sm tracking-widest">Verifica Mancanti</button>
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="apriModalNuovoMembro()" class="w-full py-4 bg-bordeaux text-white rounded-2xl font-bold shadow-lg active:scale-95 transition uppercase text-sm tracking-widest">Nuova Scheda S-21</button>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="vaiAElencoProfili()" class="py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold active:scale-95 transition uppercase text-[10px] tracking-widest text-center">Inserisci Rapporto</button>
+                    <button onclick="controllaRapportiMancanti()" class="py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold active:scale-95 transition uppercase text-[10px] tracking-widest text-center">Verifica Mancanti</button>
                 </div>
             </div>
         </div>
 
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-50 mb-12">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="bg-blue-50 p-3 rounded-2xl text-2xl">📊</div>
+                <h2 class="text-xl font-bold">Statistiche Adunanze S-88</h2>
+            </div>
+            <button onclick="apriEditorS88()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition uppercase text-sm tracking-widest">Compila S-88</button>
+        </div>
+
         <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-2">Organizzazione</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-            <button onclick="mostraGestioneGruppi()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 active:bg-gray-50">
+            <button onclick="mostraGestioneGruppi()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2">
                 <span class="text-2xl">👥</span>
                 <span class="text-[10px] font-bold uppercase">Gruppi</span>
             </button>
-            <button onclick="mostraPionieri()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 active:bg-gray-50">
+            <button onclick="mostraPionieri()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2">
                 <span class="text-2xl">🏃</span>
                 <span class="text-[10px] font-bold uppercase">Pionieri</span>
             </button>
-            <button onclick="visualizzaAnagrafica('alfabetico')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 text-center active:bg-gray-50">
+            <button onclick="visualizzaAnagrafica('alfabetico')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 text-center">
                 <span class="text-2xl">🔤</span>
-                <span class="text-[10px] font-bold uppercase leading-tight">Anagrafica A-Z</span>
+                <span class="text-[10px] font-bold uppercase">Anagrafica A-Z</span>
             </button>
-            <button onclick="visualizzaAnagrafica('gruppi')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 text-center active:bg-gray-50">
+            <button onclick="visualizzaAnagrafica('gruppi')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 text-center">
                 <span class="text-2xl">📂</span>
-                <span class="text-[10px] font-bold uppercase leading-tight">Anagrafica Gruppi</span>
+                <span class="text-[10px] font-bold uppercase">Anagrafica Gruppi</span>
             </button>
         </div>
 
@@ -86,20 +84,20 @@
 
         <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-2">Sistema e Backup</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button onclick="esportaBackup()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 active:bg-gray-50">
+            <button onclick="esportaBackup()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2">
                 <span class="text-2xl">📤</span>
                 <span class="text-[10px] font-bold uppercase">Esporta</span>
             </button>
-            <button onclick="document.getElementById('fileImport').click()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 active:bg-gray-50">
+            <button onclick="document.getElementById('fileImport').click()" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2">
                 <span class="text-2xl">📥</span>
                 <span class="text-[10px] font-bold uppercase">Importa</span>
                 <input type="file" id="fileImport" class="hidden" accept=".json" onchange="importaBackup(event)">
             </button>
-            <button onclick="alert('Importa da PDF in arrivo')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2 active:bg-gray-50">
+            <button onclick="alert('Importa da PDF in arrivo')" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center gap-2">
                 <span class="text-2xl">📄</span>
                 <span class="text-[10px] font-bold uppercase">PDF S-21</span>
             </button>
-            <button onclick="resetTotale()" class="bg-red-50 p-4 rounded-3xl border border-red-100 flex flex-col items-center gap-2 active:bg-red-100">
+            <button onclick="resetTotale()" class="bg-red-50 p-4 rounded-3xl border border-red-100 flex flex-col items-center gap-2">
                 <span class="text-2xl">⚠️</span>
                 <span class="text-[10px] font-bold text-red-600 uppercase">Reset</span>
             </button>
@@ -115,4 +113,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
