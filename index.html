@@ -20,11 +20,12 @@
         .modal-bg { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        .hidden-page { display: none; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 no-scrollbar pb-10">
 
-    <div class="max-w-4xl mx-auto p-6">
+    <div id="dashboard" class="max-w-4xl mx-auto p-6">
         <header class="flex justify-between items-center mb-10 mt-4">
             <div class="flex items-center gap-4">
                 <div class="w-14 h-14 bg-bordeaux rounded-2xl shadow-lg flex items-center justify-center text-white text-xl font-black">JW</div>
@@ -33,7 +34,7 @@
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">S-21 & S-88</p>
                 </div>
             </div>
-            <button onclick="condividiApp()" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 active:scale-90 transition">🔗</button>
+            <button onclick="location.reload()" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 active:scale-90 transition">🔄</button>
         </header>
 
         <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-gray-100 mb-6">
@@ -44,7 +45,7 @@
             <div class="grid grid-cols-1 gap-4">
                 <button onclick="apriModalNuovoMembro()" class="w-full py-5 bg-bordeaux text-white rounded-3xl font-bold uppercase text-sm tracking-widest">Nuova Scheda S-21</button>
                 <div class="grid grid-cols-2 gap-4">
-                    <button onclick="vaiAElencoProfili()" class="py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Inserisci Rapporto</button>
+                    <button onclick="vaiAElencoProfiliRapporto()" class="py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Inserisci Rapporto</button>
                     <button onclick="controllaRapportiMancanti()" class="py-4 bg-gray-50 text-red-600 border border-red-100 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Mancanti</button>
                 </div>
             </div>
@@ -66,7 +67,7 @@
                 <span class="text-3xl">👥</span>
                 <span class="text-[10px] font-bold uppercase">Gruppi</span>
             </button>
-            <button onclick="visualizzaAnagrafica('alfabetico')" class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center gap-2">
+            <button onclick="apriAnagraficaPagina()" class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center gap-2">
                 <span class="text-3xl">🔤</span>
                 <span class="text-[10px] font-bold uppercase">Anagrafica</span>
             </button>
@@ -74,7 +75,7 @@
                 <span class="text-3xl">📦</span>
                 <span class="text-[10px] font-bold text-amber-800 uppercase text-center">Esporta ZIP</span>
             </button>
-            <button onclick="mostraMenuArchivio()" class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center gap-2">
+            <button onclick="alert('In arrivo')" class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center gap-2">
                 <span class="text-3xl">📚</span>
                 <span class="text-[10px] font-bold uppercase text-center">Archivio</span>
             </button>
@@ -87,6 +88,29 @@
         </div>
     </div>
 
+    <div id="pageAnagrafica" class="hidden-page max-w-5xl mx-auto p-6">
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="tornaHome()" class="bg-gray-200 px-4 py-2 rounded-xl font-bold text-xs uppercase">← Indietro</button>
+            <h2 class="text-2xl font-black text-bordeaux uppercase">Anagrafica Alfabetica</h2>
+            <button onclick="window.print()" class="bg-bordeaux text-white px-4 py-2 rounded-xl font-bold text-xs uppercase">Stampa / PDF</button>
+        </div>
+        
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="p-4 font-bold uppercase text-[10px]">Nominativo</th>
+                        <th class="p-4 font-bold uppercase text-[10px]">Indirizzo / Domicilio</th>
+                        <th class="p-4 font-bold uppercase text-[10px]">Telefono</th>
+                        <th class="p-4 font-bold uppercase text-[10px]">Gruppo</th>
+                        <th class="p-4 font-bold uppercase text-[10px] text-right">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody id="tableAnagraficaCorpo"></tbody>
+            </table>
+        </div>
+    </div>
+
     <div id="mainModal" class="fixed inset-0 z-50 modal-bg hidden p-4 flex items-center justify-center">
         <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-8 max-h-[90vh] overflow-y-auto relative shadow-2xl">
             <div id="modalContent"></div>
@@ -94,117 +118,256 @@
     </div>
 
     <script>
+        // INIZIALIZZAZIONE DATABASE
         let db = JSON.parse(localStorage.getItem('congregazione_db')) || {
-            membri: [], gruppi: [], s88: {}, archivio: {}
+            membri: [], gruppi: ["Gruppo 1", "Gruppo 2", "Gruppo 3"], s88: {}, archivio: {}
         };
 
         const MESI = ["Settembre", "Ottobre", "Novembre", "Dicembre", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto"];
-        const GITHUB_TEMPLATES = "https://asarritzu-boop.github.io/Anagrafica/templates/";
+        const GITHUB_BASE = "https://asarritzu-boop.github.io/Anagrafica/templates/";
 
         function saveData() { localStorage.setItem('congregazione_db', JSON.stringify(db)); }
         function chiudiModal() { document.getElementById('mainModal').classList.add('hidden'); }
         function apriModal(html) {
-            document.getElementById('modalContent').innerHTML = html + `<button onclick="chiudiModal()" class="w-full mt-6 bg-gray-200 p-3 rounded-xl font-bold text-gray-600 uppercase text-xs">Chiudi</button>`;
+            document.getElementById('modalContent').innerHTML = html + `<button onclick="chiudiModal()" class="w-full mt-6 bg-gray-200 p-3 rounded-xl font-bold text-gray-600 uppercase text-xs">Annulla</button>`;
             document.getElementById('mainModal').classList.remove('hidden');
         }
 
-        // --- GESTIONE S-88 (STATISTICHE ADUNANZE) ---
-        function apriEditorS88() {
-            let h = `<h2 class="text-xl font-bold mb-6 text-blue-600 uppercase text-center">Compila Adunanze (S-88)</h2>
-            <p class="text-[10px] text-gray-400 mb-4 uppercase text-center font-bold italic">Inserisci i presenti per ogni settimana</p>
-            <div class="space-y-4 max-h-[50vh] overflow-y-auto pr-2">`;
-            
-            MESI.forEach(mese => {
-                const val = db.s88[mese] || { infrasettimanale: "", weekend: "" };
-                h += `
-                <div class="p-4 bg-gray-50 rounded-2xl border">
-                    <p class="font-bold text-xs uppercase mb-2 text-gray-700 border-b pb-1">${mese}</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-[9px] font-bold uppercase text-gray-400">Infrasett.</label>
-                            <input type="number" value="${val.infrasettimanale}" onchange="salvaDatoS88('${mese}', 'infrasettimanale', this.value)" class="w-full p-2 rounded-lg border text-sm font-bold">
-                        </div>
-                        <div>
-                            <label class="text-[9px] font-bold uppercase text-gray-400">Weekend</label>
-                            <input type="number" value="${val.weekend}" onchange="salvaDatoS88('${mese}', 'weekend', this.value)" class="w-full p-2 rounded-lg border text-sm font-bold">
-                        </div>
-                    </div>
-                </div>`;
-            });
-            apriModal(h + `</div>`);
-        }
-
-        function salvaDatoS88(mese, tipo, valore) {
-            if (!db.s88[mese]) db.s88[mese] = { infrasettimanale: "", weekend: "" };
-            db.s88[mese][tipo] = valore;
-            saveData();
-        }
-
-        async function generaPDF_S88() {
-            try {
-                alert("Scaricamento template S-88 da GitHub...");
-                const url = GITHUB_TEMPLATES + "S-88.pdf";
-                const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
-                const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
-                const form = pdfDoc.getForm();
-
-                // Esempio di mappatura campi (Assicurati che i nomi corrispondano nel PDF)
-                MESI.forEach(mese => {
-                    if(db.s88[mese]) {
-                        try {
-                            form.getTextField(mese + '_Infra').setText(db.s88[mese].infrasettimanale.toString());
-                            form.getTextField(mese + '_End').setText(db.s88[mese].weekend.toString());
-                        } catch(e) {}
-                    }
-                });
-
-                const pdfBytes = await pdfDoc.save();
-                scaricaBlob(pdfBytes, "S-88_Compilato.pdf");
-            } catch(e) {
-                alert("Errore PDF S-88: " + e.message);
-            }
-        }
-
-        // --- ALTRE FUNZIONI (S-21, BACKUP, ETC) ---
+        // --- GESTIONE MEMBRI (S-21) ---
         function apriModalNuovoMembro(id = null) {
             const m = id ? db.membri.find(x => x.id === id) : null;
-            let h = `<h2 class="text-xl font-bold mb-6 text-bordeaux uppercase text-center">${m ? 'Modifica' : 'Nuova Scheda'}</h2>
+            let h = `
+            <h2 class="text-xl font-bold mb-6 text-bordeaux uppercase text-center">${m ? 'Modifica Profilo' : 'Nuova Scheda S-21'}</h2>
             <div class="space-y-4">
                 <input type="hidden" id="m_id" value="${m ? m.id : ''}">
-                <input type="text" id="n_nome" value="${m ? m.nome : ''}" placeholder="Nome e Cognome" class="w-full border-2 p-3 rounded-xl font-bold">
-                <div class="grid grid-cols-2 gap-2 text-xs font-bold p-4 bg-gray-50 rounded-xl">
-                    <label><input type="checkbox" id="c_anziano" ${m?.anziano?'checked':''}> Anziano</label>
-                    <label><input type="checkbox" id="c_servitore" ${m?.servitore?'checked':''}> Servitore</label>
-                    <label><input type="checkbox" id="c_pionR" ${m?.pioniereR?'checked':''}> Pion. Reg.</label>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Nome e Cognome</label>
+                    <input type="text" id="m_nome" value="${m ? m.nome : ''}" class="w-full border-2 p-3 rounded-xl font-bold bg-gray-50 focus:bg-white outline-none">
                 </div>
-                <button onclick="salvaMembro()" class="w-full bg-bordeaux text-white p-4 rounded-xl font-bold uppercase">Salva</button>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Nascita</label>
+                        <input type="date" id="m_nascita" value="${m ? m.nascita : ''}" class="w-full border-2 p-3 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Battesimo</label>
+                        <input type="date" id="m_battesimo" value="${m ? m.battesimo : ''}" class="w-full border-2 p-3 rounded-xl text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Domicilio</label>
+                    <input type="text" id="m_indirizzo" value="${m ? m.indirizzo : ''}" placeholder="Via, Città" class="w-full border-2 p-3 rounded-xl text-sm font-semibold">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Telefono / Cellulare</label>
+                    <input type="tel" id="m_tel" value="${m ? m.telefono : ''}" class="w-full border-2 p-3 rounded-xl text-sm font-semibold">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Gruppo di Servizio</label>
+                    <select id="m_gruppo" class="w-full border-2 p-3 rounded-xl text-sm font-bold bg-white">
+                        <option value="">Nessuno</option>
+                        ${db.gruppi.map(g => `<option value="${g}" ${m?.gruppo === g ? 'selected' : ''}>${g}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-[10px] font-bold p-4 bg-gray-100 rounded-2xl">
+                    <label class="flex items-center gap-2"><input type="checkbox" id="m_anziano" ${m?.anziano?'checked':''}> ANZIANO</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="m_servitore" ${m?.servitore?'checked':''}> SERVITORE</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="m_pionR" ${m?.pioniereR?'checked':''}> PION. REGOLARE</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="m_unto" ${m?.unto?'checked':''}> UNTO</label>
+                </div>
+                <button onclick="salvaMembro()" class="w-full bg-bordeaux text-white p-4 rounded-2xl font-bold uppercase shadow-lg shadow-bordeaux/20">Salva Dati</button>
             </div>`;
             apriModal(h);
         }
 
         function salvaMembro() {
             const id = document.getElementById('m_id').value;
-            const nome = document.getElementById('n_nome').value;
-            if(!nome) return alert("Inserisci il nome");
-            const d = {
+            const nome = document.getElementById('m_nome').value;
+            if(!nome) return alert("Il nome è obbligatorio");
+
+            const dati = {
                 id: id ? parseInt(id) : Date.now(),
-                nome,
-                anziano: document.getElementById('c_anziano').checked,
-                servitore: document.getElementById('c_servitore').checked,
-                pioniereR: document.getElementById('c_pionR').checked,
-                rapporti: id ? db.membri.find(x=>x.id==id).rapporti : {}
+                nome: nome,
+                nascita: document.getElementById('m_nascita').value,
+                battesimo: document.getElementById('m_battesimo').value,
+                indirizzo: document.getElementById('m_indirizzo').value,
+                telefono: document.getElementById('m_tel').value,
+                gruppo: document.getElementById('m_gruppo').value,
+                anziano: document.getElementById('m_anziano').checked,
+                servitore: document.getElementById('m_servitore').checked,
+                pioniereR: document.getElementById('m_pionR').checked,
+                unto: document.getElementById('m_unto').checked,
+                rapporti: id ? (db.membri.find(x => x.id == id)?.rapporti || {}) : {}
             };
-            if(id) db.membri = db.membri.map(x => x.id == id ? d : x);
-            else db.membri.push(d);
-            saveData(); chiudiModal();
+
+            if(id) db.membri = db.membri.map(x => x.id == id ? dati : x);
+            else db.membri.push(dati);
+
+            saveData();
+            chiudiModal();
+            if(!document.getElementById('pageAnagrafica').classList.contains('hidden-page')) apriAnagraficaPagina();
         }
 
-        function vaiAElencoProfili() {
-            let h = `<h2 class="text-xl font-bold mb-4 text-center">RAPPORTI S-21</h2><div class="space-y-2">`;
+        // --- NAVIGAZIONE PAGINA ANAGRAFICA ---
+        function apriAnagraficaPagina() {
+            document.getElementById('dashboard').classList.add('hidden-page');
+            document.getElementById('pageAnagrafica').classList.remove('hidden-page');
+            
+            const tbody = document.getElementById('tableAnagraficaCorpo');
+            tbody.innerHTML = "";
+            
+            // Ordine alfabetico per cognome (assumendo "Nome Cognome" o "Cognome Nome")
+            const ordinati = [...db.membri].sort((a,b) => a.nome.localeCompare(b.nome));
+            
+            ordinati.forEach(m => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-xs">${m.nome}</td>
+                    <td class="p-4 text-xs text-gray-600">${m.indirizzo || '-'}</td>
+                    <td class="p-4 text-xs font-mono text-gray-500">${m.telefono || '-'}</td>
+                    <td class="p-4 text-[10px] font-black uppercase text-blue-600">${m.gruppo || 'Nessuno'}</td>
+                    <td class="p-4 text-right">
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="apriModalNuovoMembro(${m.id})" class="p-2 bg-gray-100 rounded-lg">✏️</button>
+                            <button onclick="generaPDF_S21_Singola(${m.id})" class="p-2 bg-amber-50 rounded-lg">📄</button>
+                            <button onclick="eliminaMembro(${m.id})" class="p-2 bg-red-50 text-red-500 rounded-lg">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function tornaHome() {
+            document.getElementById('pageAnagrafica').classList.add('hidden-page');
+            document.getElementById('dashboard').classList.remove('hidden-page');
+        }
+
+        function eliminaMembro(id) {
+            if(confirm("Eliminare definitivamente questa scheda?")) {
+                db.membri = db.membri.filter(x => x.id !== id);
+                saveData();
+                apriAnagraficaPagina();
+            }
+        }
+
+        // --- GESTIONE PDF (GITHUB INTEGRATION) ---
+        async function generaPDF_S21_Singola(id) {
+            const m = db.membri.find(x => x.id === id);
+            try {
+                const url = GITHUB_BASE + "S-21.pdf";
+                const existingPdfBytes = await fetch(url).then(res => {
+                    if(!res.ok) throw new Error("Template non trovato su GitHub");
+                    return res.arrayBuffer();
+                });
+
+                const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+                const form = pdfDoc.getForm();
+
+                // Mapping campi PDF S-21 (Regola i nomi in base al tuo file PDF)
+                try {
+                    form.getTextField('Nome').setText(m.nome);
+                    form.getTextField('Indirizzo').setText(m.indirizzo || '');
+                    form.getTextField('Telefono').setText(m.telefono || '');
+                    form.getTextField('Data di nascita').setText(m.nascita || '');
+                    form.getTextField('Data del battesimo').setText(m.battesimo || '');
+                    if(m.anziano) form.getCheckBox('Anziano').check();
+                    if(m.servitore) form.getCheckBox('Servitore di ministero').check();
+                    if(m.pioniereR) form.getCheckBox('Pioniere regolare').check();
+                } catch(e) { console.warn("Alcuni campi non mappati correttamente", e); }
+
+                const pdfBytes = await pdfDoc.save();
+                scaricaBlob(pdfBytes, `S-21_${m.nome.replace(/ /g,'_')}.pdf`);
+            } catch(e) {
+                alert("Errore caricamento S-21: " + e.message);
+            }
+        }
+
+        async function stampaTutteS21() {
+            if(db.membri.length === 0) return alert("Nessun membro presente");
+            const zip = new JSZip();
+            try {
+                const url = GITHUB_BASE + "S-21.pdf";
+                const template = await fetch(url).then(res => res.arrayBuffer());
+
+                for (const m of db.membri) {
+                    const pdfDoc = await PDFLib.PDFDocument.load(template);
+                    const form = pdfDoc.getForm();
+                    try { form.getTextField('Nome').setText(m.nome); } catch(e){}
+                    const pdfBytes = await pdfDoc.save();
+                    zip.file(`${m.gruppo || 'Senza_Gruppo'}/S-21_${m.nome.replace(/ /g,'_')}.pdf`, pdfBytes);
+                }
+
+                const content = await zip.generateAsync({type:"blob"});
+                scaricaBlob(content, "Archivio_S-21_Per_Gruppi.zip");
+            } catch(e) { alert("Errore ZIP: " + e.message); }
+        }
+
+        // --- S-88 ADUNANZE ---
+        function apriEditorS88() {
+            let h = `<h2 class="text-xl font-bold mb-6 text-blue-600 uppercase text-center">Statistiche Adunanze</h2>
+            <div class="space-y-4 max-h-[50vh] overflow-y-auto pr-2">`;
+            MESI.forEach(mese => {
+                const val = db.s88[mese] || { infra: "", week: "" };
+                h += `
+                <div class="p-4 bg-gray-50 rounded-2xl border">
+                    <p class="font-bold text-xs uppercase mb-2 text-gray-700">${mese}</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="number" placeholder="Infrasett." value="${val.infra}" onchange="salvaS88('${mese}','infra',this.value)" class="p-2 rounded-lg border text-sm">
+                        <input type="number" placeholder="Weekend" value="${val.week}" onchange="salvaS88('${mese}','week',this.value)" class="p-2 rounded-lg border text-sm">
+                    </div>
+                </div>`;
+            });
+            apriModal(h + `</div>`);
+        }
+
+        function salvaS88(mese, tipo, val) {
+            if(!db.s88[mese]) db.s88[mese] = { infra: "", week: "" };
+            db.s88[mese][tipo] = val;
+            saveData();
+        }
+
+        async function generaPDF_S88() {
+            try {
+                const url = GITHUB_BASE + "S-88.pdf";
+                const bytes = await fetch(url).then(res => res.arrayBuffer());
+                const pdfDoc = await PDFLib.PDFDocument.load(bytes);
+                const form = pdfDoc.getForm();
+                
+                MESI.forEach(m => {
+                    if(db.s88[m]) {
+                        try {
+                            form.getTextField(m+'_Infra').setText(db.s88[m].infra.toString());
+                            form.getTextField(m+'_Week').setText(db.s88[m].week.toString());
+                        } catch(e){}
+                    }
+                });
+
+                const pdfSave = await pdfDoc.save();
+                scaricaBlob(pdfSave, "S-88_Compilato.pdf");
+            } catch(e) { alert("Errore S-88: " + e.message); }
+        }
+ // --- UTILS ---
+        function scaricaBlob(data, nome) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([data]));
+            a.download = nome; a.click();
+        }
+
+        function esportaBackup() { scaricaBlob(JSON.stringify(db), "backup_anagrafica.json"); }
+        function importaBackup(e) {
+            const r = new FileReader();
+            r.onload = (f) => { db = JSON.parse(f.target.result); saveData(); location.reload(); };
+            r.readAsText(e.target.files[0]);
+        }
+
+        function vaiAElencoProfiliRapporto() {
+            let h = `<h2 class="text-xl font-bold mb-4 text-center">Inserimento Rapporti</h2><div class="space-y-2">`;
             db.membri.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(m => {
                 h += `<div class="flex justify-between items-center p-3 border rounded-xl">
-                    <span class="font-bold text-sm">${m.nome}</span>
-                    <button onclick="apriEditorRapporti(${m.id})" class="bg-bordeaux text-white px-4 py-1 rounded-lg text-[10px] uppercase">Dati</button>
+                    <span class="font-bold text-xs uppercase">${m.nome}</span>
+                    <button onclick="apriEditorRapporti(${m.id})" class="bg-bordeaux text-white px-4 py-1 rounded-lg text-[10px] font-bold">REPORT</button>
                 </div>`;
             });
             apriModal(h + `</div>`);
@@ -212,56 +375,47 @@
 
         function apriEditorRapporti(id) {
             const m = db.membri.find(x => x.id === id);
-            let h = `<h2 class="text-lg font-bold mb-4">${m.nome}</h2><div class="space-y-2 max-h-[50vh] overflow-y-auto">`;
+            let h = `<h2 class="text-lg font-bold mb-4">${m.nome}</h2><div class="space-y-2">`;
             MESI.forEach(mese => {
                 h += `<label class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border text-xs font-bold uppercase">
-                    ${mese} <input type="checkbox" class="w-5 h-5" ${m.rapporti[mese]?.partecipato ? 'checked' : ''} onchange="salvaMese(${id}, '${mese}', this.checked)">
+                    ${mese} <input type="checkbox" class="w-5 h-5" ${m.rapporti[mese]?.partecipato ? 'checked' : ''} onchange="salvaRapporto(${id}, '${mese}', this.checked)">
                 </label>`;
             });
             apriModal(h + `</div>`);
         }
 
-        function salvaMese(id, mese, val) {
+        function salvaRapporto(id, mese, val) {
             const m = db.membri.find(x => x.id == id);
+            if(!m.rapporti) m.rapporti = {};
             m.rapporti[mese] = { partecipato: val };
             saveData();
         }
 
-        async function stampaTutteS21() {
-            try {
-                const zip = new JSZip();
-                const resp = await fetch(GITHUB_TEMPLATES + "S-21.pdf");
-                const template = await resp.arrayBuffer();
-                for (const m of db.membri) {
-                    const pdfDoc = await PDFLib.PDFDocument.load(template);
-                    const form = pdfDoc.getForm();
-                    try { form.getTextField('Nome').setText(m.nome); } catch(e) {}
-                    const pdfBytes = await pdfDoc.save();
-                    zip.file(`S-21_${m.nome.replace(/ /g,'_')}.pdf`, pdfBytes);
-                }
-                const content = await zip.generateAsync({type:"blob"});
-                scaricaBlob(content, "Archivio_S-21.zip");
-            } catch(e) { alert("Errore ZIP: " + e.message); }
+        function mostraGestioneGruppi() {
+            let h = `<h2 class="text-xl font-bold mb-4 uppercase text-center text-blue-600">Gestione Gruppi</h2>
+            <div class="space-y-2 mb-4">`;
+            db.gruppi.forEach((g, idx) => {
+                h += `<div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border">
+                    <span class="font-bold text-xs">${g}</span>
+                    <button onclick="rimuoviGruppo(${idx})" class="text-red-500 font-bold">✕</button>
+                </div>`;
+            });
+            h += `</div>
+            <input type="text" id="nuovoGruppo" placeholder="Nome Gruppo" class="w-full p-3 border-2 rounded-xl mb-2 text-sm">
+            <button onclick="aggiungiGruppo()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold uppercase text-xs">Aggiungi</button>`;
+            apriModal(h);
         }
 
-        function scaricaBlob(data, nome) {
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([data]));
-            a.download = nome; a.click();
+        function aggiungiGruppo() {
+            const n = document.getElementById('nuovoGruppo').value;
+            if(n) { db.gruppi.push(n); saveData(); mostraGestioneGruppi(); }
         }
 
-        function esportaBackup() {
-            scaricaBlob(JSON.stringify(db), "backup_congregazione.json");
+        function rimuoviGruppo(idx) {
+            db.gruppi.splice(idx, 1); saveData(); mostraGestioneGruppi();
         }
 
-        function importaBackup(e) {
-            const r = new FileReader();
-            r.onload = (f) => { db = JSON.parse(f.target.result); saveData(); location.reload(); };
-            r.readAsText(e.target.files[0]);
-        }
-
-        function mostraMenuArchivio() { alert("Funzione Archivio Storico attiva nel database."); }
-        function visualizzaAnagrafica() { vaiAElencoProfili(); }
     </script>
 </body>
 </html>
+        
