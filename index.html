@@ -192,9 +192,24 @@
         .pdf-row span { margin-right: 5px; white-space: nowrap; }
         .pdf-row input { border: none; flex-grow: 1; font-size: 11pt; font-family: inherit; padding: 0 5px; outline: none; background: transparent; }
         
-        .pdf-checks-top { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; align-items: center; font-size: 10pt; }
-        .check-item { display: flex; align-items: center; }
-        .check-item input { margin-right: 4px; }
+      .pdf-checks-top { 
+    display: grid; 
+    /* Crea due colonne di larghezza automatica */
+    grid-template-columns: auto auto; 
+    /* Spazio tra le righe (10px) e tra le colonne (20px) */
+    gap: 10px 20px; 
+    align-items: center; 
+    font-size: 10pt;
+    margin-left: 20px; /* Spazio dai dati anagrafici a sinistra */
+    white-space: nowrap; /* Impedisce ad "Altre Pecore" di andare a capo */
+}
+
+/* Assicuriamoci che gli elementi dentro siano ben allineati */
+.check-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
 
         .pdf-roles-row { 
             display: flex; justify-content: space-between; border-top: none; solid #000; 
@@ -406,11 +421,12 @@
                             <div class="pdf-row"><span>Data del battesimo:</span><input type="text" id="data_battesimo"></div>
                         </div>
                         <div class="pdf-checks-top">
-                            <div class="check-item"><input type="checkbox" id="maschio"> Maschio</div>
-                            <div class="check-item"><input type="checkbox" id="altre_pecore"> Altre Pecore</div>
-                            <div class="check-item"><input type="checkbox" id="femmina"> Femmina</div>
-                            <div class="check-item"><input type="checkbox" id="unto"> Unto</div>
-                        </div>
+    <div class="check-item"><input type="checkbox" id="maschio"> Maschio</div>
+    <div class="check-item"><input type="checkbox" id="femmina"> Femmina</div>
+    
+    <div class="check-item"><input type="checkbox" id="altre_pecore"> Altre Pecore</div>
+    <div class="check-item"><input type="checkbox" id="unto"> Unto</div>
+</div>
                     </div>
 
                     <div class="pdf-roles-row">
