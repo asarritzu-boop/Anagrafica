@@ -523,25 +523,26 @@ let filteredResults = [];
         }
 
 function openList(tipo) {
-    currentView = tipo; // Imposta la vista (pionieri, mancanti, inattivi o totale)
+    currentView = tipo; 
     
-    // Resetta i campi di ricerca manuale per evitare conflitti
+    // Resetta i campi di ricerca e filtri avanzati solo quando si cambia sezione dalla Home
     document.getElementById('main-search-input').value = "";
     document.getElementById('filter-role').value = "";
     document.getElementById('filter-missing').value = "";
+    document.getElementById('filter-birth').value = "";
+    document.getElementById('filter-baptism').value = "";
     
-    showHome(); // Chiude eventuali form aperti
     document.getElementById('home-screen').style.display = 'none';
     document.getElementById('list-screen').style.display = 'block';
     
-    // Cambia il titolo della pagina in base alla sezione
+    // Aggiorna il titolo
     const tit = document.getElementById('list-title');
     if(tipo === 'pionieri') tit.innerText = 'Elenco Pionieri';
     else if(tipo === 'mancanti') tit.innerText = 'Rapporti Mancanti (' + mesi[getCurrentServiceMonthIndex()] + ')';
     else if(tipo === 'inattivi') tit.innerText = 'Inattivi (Ultimi 6 mesi)';
     else tit.innerText = 'Anagrafica Totale';
     
-    renderList(); // Applica i filtri
+    renderList(); 
 }
 function toggleFilterSection() {
     const fs = document.getElementById('filter-section-ui');
@@ -593,13 +594,19 @@ function renderList() {
             const d = (i.mesi_dati && i.mesi_dati[currentIdx]) ? i.mesi_dati[currentIdx] : {};
             if (!isOldYear && d.min) return false;
         } 
-        else if (missingVal === "3") { // IRREGOLARI
-            let countMancanti = 0;
-            for (let m = 0; m <= currentIdx; m++) {
-                if (isOldYear || !i.mesi_dati[m].min) countMancanti++;
-            }
-            if (countMancanti < 3) return false;
-        } 
+        else if (missingVal === "3") { // IRREGOLARI (Solo anno di servizio in corso)
+    let haMancantiAnnoCorrente = false;
+    // Controlliamo i mesi da Settembre (indice 0) fino al mese di servizio attuale
+    for (let m = 0; m <= currentIdx; m++) {
+        const d = (i.mesi_dati && i.mesi_dati[m]) ? i.mesi_dati[m] : {};
+        // Se è un vecchio anno o se il mese nell'anno attuale è vuoto (no min e no ore)
+        if (isOldYear || (!d.min && (!d.ore || parseInt(d.ore) === 0))) {
+            haMancantiAnnoCorrente = true;
+            break; 
+        }
+    }
+    if (!haMancantiAnnoCorrente) return false;
+}
         else if (missingVal === "6") {
             if (mesiInattivoConsecutivi < 6) return false;
         }
@@ -686,9 +693,18 @@ document.getElementById('s21-form').addEventListener('input', () => {
         }
 
         function handleBack() {
-            if (hasUnsavedChanges && !confirm("Uscire senza salvare?")) return;
-            if (isNewModule) showHome(); else openList(currentView);
-        }
+    if (hasUnsavedChanges && !confirm("Uscire senza salvare?")) return;
+    
+    // Se stavamo creando un NUOVO modulo dalla Home, torniamo alla Home
+    if (isNewModule) {
+        showHome();
+    } else {
+        // Se venivamo da una lista filtrata, nascondiamo solo il form
+        // Senza ricaricare openList(), così i filtri e la posizione rimangono invariati
+        document.getElementById('form-screen').style.display = 'none';
+        document.getElementById('list-screen').style.display = 'block';
+    }
+}
 
         // LOGICA DI ZOOM MIGLIORATA
         function applyManualZoom(val) {
@@ -842,8 +858,17 @@ document.getElementById('s21-form').addEventListener('input', () => {
     alert("Dati salvati correttamente.");
     
     // Ritorna alla home o alla lista
-    showHome();
-}
+  if (isNewModule) {
+        showHome();
+    } else {
+        // Invece di resettare tutto, torniamo alla lista esistente
+        document.getElementById('form-screen').style.display = 'none';
+        document.getElementById('list-screen').style.display = 'block';
+        // Aggiorniamo i dati nella lista (nel caso avessimo cambiato nome) 
+        // ma mantenendo i filtri attivi
+        renderList(); 
+    }
+ }
 
         function archiveCurrentYear() {
             const nome = document.getElementById('nome_cognome').value;
