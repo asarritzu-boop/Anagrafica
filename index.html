@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anagrafica Congregazione - S-21 Pro</title>
 
     <meta name="theme-color" content="#80242a">
@@ -59,13 +59,17 @@
     hr { border: 0; height: 1px; background: #D1D1D6; margin: 10px 0; width: 100%; }
 
     /* --- STILI MODULO S-21 (PDF) --- */
-    .sheet { 
-        width: 210mm; min-height: 296mm; padding: 10mm 15mm; background: white; 
-        margin: 0 auto; box-sizing: border-box; color: #000; 
-        font-family: Arial, sans-serif; font-weight: bold; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        transform-origin: top center;
-    }
+   .sheet { 
+    width: 210mm; 
+    min-height: 296mm; 
+    padding: 10mm 15mm; 
+    background: white; 
+    margin: 0 auto; 
+    box-sizing: border-box; 
+    /* Cambiamo l'origine a top left per facilitare il calcolo dello scroll */
+    transform-origin: top left; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
 
     .pdf-title { 
         font-size: 15pt; font-weight: bold; text-align: center; 
@@ -174,7 +178,35 @@
     .group-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
     .group-title { font-size: 18px; font-weight: 700; color: var(--ios-blue); }
     .group-actions { display: flex; gap: 5px; }
-    #form-wrapper-responsive { width: 100%; overflow: hidden; display: flex; justify-content: center; padding-top: 20px; padding-bottom: 50px; }
+    
+    /* --- NUOVA LOGICA DI ZOOM PER VISUALIZZAZIONE SMARTPHONE --- */
+   #form-wrapper-responsive { 
+    width: 100%; 
+    overflow: auto; /* Permette scorrimento sia verticale che orizzontale */
+    display: block; /* Cambiato da flex a block per gestire meglio lo scroll orizzontale */
+    padding: 20px;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+    background-color: #525659;
+}
+    
+    .zoom-controls {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(255,255,255,0.9);
+        backdrop-filter: blur(10px);
+        padding: 10px;
+        border-radius: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 2000;
+        border: 1px solid #ddd;
+    }
+    .zoom-controls input { width: 100px; accent-color: var(--accent-maroon); }
+
     #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); color: #000; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
 
     @media print { .no-print { display: none !important; } .sheet { margin: 0; box-shadow: none; border: none; transform: none !important; } }
@@ -364,6 +396,11 @@
             <div class="input-group-ios"><label>DOMICILIO</label><input type="text" id="domicilio"></div>
             <div class="input-group-ios"><label>TELEFONO</label><input type="text" id="telefono"></div>
             <button class="btn btn-archive" id="btn-archive-now" style="margin-top:10px;" onclick="archiveCurrentYear()">Archivia e Nuovo Anno</button>
+        </div>
+
+        <div class="zoom-controls no-print" id="zoom-ui">
+            <span style="font-size:12px; font-weight:bold;">ZOOM</span>
+            <input type="range" id="zoom-slider" min="0.3" max="1.5" step="0.05" value="0.5" oninput="applyManualZoom(this.value)">
         </div>
 
         <div id="form-wrapper-responsive">
@@ -601,18 +638,57 @@ function resetFilters() {
             if (isNewModule) showHome(); else openList(currentView);
         }
 
+        // LOGICA DI ZOOM MIGLIORATA
+        function applyManualZoom(val) {
+    const sheet = document.getElementById('pdf-template');
+    const wrapper = document.getElementById('form-wrapper-responsive');
+    
+    // Applica lo zoom al foglio
+    sheet.style.transform = `scale(${val})`;
+
+    // Forza il contenitore ad essere grande quanto il foglio zoomato
+    // 794px è la larghezza di un A4 a 96dpi
+    const zoomedWidth = 794 * val;
+    const zoomedHeight = 1123 * val;
+
+    // Creiamo uno spazio vuoto che forzi lo scroll orizzontale e verticale
+    sheet.style.marginBottom = `-${1123 - zoomedHeight}px`;
+    sheet.style.marginRight = `-${794 - zoomedWidth}px`;
+    
+    // Centratura se il foglio è più piccolo dello schermo
+    if (zoomedWidth < window.innerWidth) {
+        wrapper.style.display = "flex";
+        wrapper.style.justifyContent = "center";
+    } else {
+        wrapper.style.display = "block";
+        wrapper.style.justifyContent = "unset";
+    }
+}
+
         function autoFitSheet() {
-            const container = document.getElementById('form-wrapper-responsive');
-            const sheet = document.getElementById('pdf-template');
-            if (!container || !sheet || container.offsetParent === null) return;
-            const containerWidth = container.clientWidth - 20; 
-            const sheetFullWidth = 794; 
-            let scale = containerWidth / sheetFullWidth;
-            if (scale > 1) scale = 1; 
-            sheet.style.transform = `scale(${scale})`;
-            const scaledHeight = 1123 * scale; 
-            container.style.height = `${scaledHeight + 50}px`;
-        }
+    const container = document.getElementById('form-wrapper-responsive');
+    const sheet = document.getElementById('pdf-template');
+    if (!container || !sheet) return;
+
+    // Larghezza disponibile (con un piccolo margine di 10px)
+    const availableWidth = window.innerWidth - 10;
+    const sheetWidth = 794; // Larghezza fissa del modulo A4 in pixel (210mm)
+
+    // Calcola la scala necessaria per far stare il foglio nel display
+    let scale = availableWidth / sheetWidth;
+
+    // Applica un limite massimo (non ingrandire oltre il 100% su desktop)
+    if (scale > 1) scale = 1; 
+    // Applica un limite minimo per evitare che diventi minuscolo
+    if (scale < 0.3) scale = 0.3;
+
+    // Applica lo zoom allo slider e al modulo
+    document.getElementById('zoom-slider').value = scale;
+    applyManualZoom(scale);
+
+    // Centratura forzata tramite scroll
+    container.scrollLeft = (sheetWidth * scale - window.innerWidth) / 2;
+}
 
         window.addEventListener('resize', () => {
             if (document.getElementById('form-screen').style.display === 'block') {
@@ -734,6 +810,7 @@ function resetFilters() {
             await html2pdf().set({ margin:0, filename:`Storico_${item.nome_cognome}.pdf`, html2canvas:{scale:2, scrollY:0}, jsPDF:{unit:'mm', format:'a4'} }).from(clone).save();
         }
 
+
         function deleteHistoryItem(id) { if(confirm("Eliminare?")) { let s = JSON.parse(localStorage.getItem('storico_congregazione') || '[]').filter(i => String(i.id_archivio) !== String(id)); localStorage.setItem('storico_congregazione', JSON.stringify(s)); renderHistory(); } }
 
         async function downloadZip(tipo) {
@@ -820,18 +897,57 @@ function resetFilters() {
     document.getElementById('loader').style.display = 'none';
 }
 
-        async function saveAndPrintSingle() { 
-            const element = document.getElementById('pdf-template');
-            const originalTransform = element.style.transform;
-            element.style.transform = 'scale(1)';
-            await html2pdf().set({ 
-                margin: 0, 
-                filename:`${document.getElementById('nome_cognome').value || 'Modulo'}.pdf`, 
-                html2canvas:{ scale: 2, scrollY: 0 }, 
-                jsPDF:{ unit:'mm', format:'a4', orientation: 'portrait' } 
-            }).from(element).save();
-            element.style.transform = originalTransform;
-        }
+        async function saveAndPrintSingle() {
+    const element = document.getElementById('pdf-template');
+    const wrapper = document.getElementById('form-wrapper-responsive');
+    const nomeProclamatore = document.getElementById('nome_cognome').value || 'Modulo_S21';
+    
+    // 1. Salvataggio stato attuale dello zoom
+    const originalTransform = element.style.transform;
+    const originalMarginBottom = element.style.marginBottom;
+    const originalMarginRight = element.style.marginRight;
+    const currentZoom = document.getElementById('zoom-slider').value;
+
+    // 2. Reset temporaneo per la "scansione" PDF
+    // Portiamo la scala a 1 e rimuoviamo i margini di compensazione dello scroll
+    element.style.transform = 'scale(1)';
+    element.style.marginBottom = '0px';
+    element.style.marginRight = '0px';
+    
+    // Mostriamo il loader
+    document.getElementById('loader').style.display = 'flex';
+    document.getElementById('progress-text').innerText = "Generazione PDF in corso...";
+
+    const opt = {
+        margin: 0,
+        filename: `${nomeProclamatore}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, // Aumenta la qualità del PDF
+            useCORS: true,
+            letterRendering: true,
+            scrollY: 0,
+            scrollX: 0
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    try {
+        // Generazione effettiva
+        await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+        console.error("Errore durante la generazione del PDF:", error);
+        alert("Si è verificato un errore durante la creazione del PDF.");
+    } finally {
+        // 3. Ripristino dello zoom precedente per la visualizzazione su smartphone
+        element.style.transform = originalTransform;
+        element.style.marginBottom = originalMarginBottom;
+        element.style.marginRight = originalMarginRight;
+        
+        // Nascondiamo il loader
+        document.getElementById('loader').style.display = 'none';
+    }
+}
 
         function deleteItem(id) { if(confirm("Eliminare?")) { localStorage.setItem('archivio_congregazione', JSON.stringify(JSON.parse(localStorage.getItem('archivio_congregazione') || '[]').filter(i => String(i.id) !== String(id)))); renderList(); } }
         function filterList(v) { document.querySelectorAll('.list-item').forEach(i => i.style.display = i.innerText.toLowerCase().includes(v.toLowerCase()) ? "" : "none"); }
