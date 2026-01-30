@@ -630,6 +630,13 @@ function resetFilters() {
             setTimeout(autoFitSheet, 50);
 
             if (id) loadData(id);
+// Reset della variabile quando apri un modulo
+hasUnsavedChanges = false;
+
+// Ascolta ogni cambiamento all'interno del form
+document.getElementById('s21-form').addEventListener('input', () => {
+    hasUnsavedChanges = true;
+});
             setTimeout(() => hasUnsavedChanges = false, 100);
         }
 
@@ -735,31 +742,63 @@ function resetFilters() {
             calcolaTotale();
         }
         function saveData() {
-            const id = document.getElementById('entry-id').value;
-            const nome = document.getElementById('nome_cognome').value;
-            if (!nome) return alert("Inserire il nome.");
-            const data = {
-                id, nome_cognome: nome, domicilio: document.getElementById('domicilio').value, telefono: document.getElementById('telefono').value,
-                data_nascita: document.getElementById('data_nascita').value, data_battesimo: document.getElementById('data_battesimo').value,
-                maschio: document.getElementById('maschio').checked, femmina: document.getElementById('femmina').checked,
-                altre_pecore: document.getElementById('altre_pecore').checked, unto: document.getElementById('unto').checked,
-                anziano: document.getElementById('anziano').checked, servitore: document.getElementById('servitore').checked,
-                p_regolare: document.getElementById('p_regolare').checked, p_speciale: document.getElementById('p_speciale').checked,
-                missionario: document.getElementById('missionario').checked, 
-                anno_servizio: document.getElementById('pdf-anno-input-table').value,
-                mesi_dati: mesi.map((_, i) => ({
-                    min: document.getElementById(`min_${i}`).checked, studi: document.getElementById(`studi_${i}`).value,
-                    aus: document.getElementById(`aus_${i}`).checked, ore: document.getElementById(`ore_${i}`).value, obs: document.getElementById(`obs_${i}`).value
-                }))
-            };
-            let arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
-            const idx = arch.findIndex(i => String(i.id) === String(id));
-            idx > -1 ? arch[idx] = data : arch.push(data);
-            localStorage.setItem('archivio_congregazione', JSON.stringify(arch));
-            hasUnsavedChanges = false;
-            alert("Salvato correttamente.");
-            openList(currentView);
-        }
+    const id = document.getElementById('entry-id').value;
+    const nome = document.getElementById('nome_cognome').value;
+    
+    if (!nome) {
+        alert("Inserire almeno il nome e cognome.");
+        return;
+    }
+
+    // Costruzione dell'oggetto con i dati del form
+    const data = {
+        id, 
+        nome_cognome: nome, 
+        domicilio: document.getElementById('domicilio').value, 
+        telefono: document.getElementById('telefono').value,
+        data_nascita: document.getElementById('data_nascita').value, 
+        data_battesimo: document.getElementById('data_battesimo').value,
+        maschio: document.getElementById('maschio').checked, 
+        femmina: document.getElementById('femmina').checked,
+        altre_pecore: document.getElementById('altre_pecore').checked, 
+        unto: document.getElementById('unto').checked,
+        anziano: document.getElementById('anziano').checked, 
+        servitore: document.getElementById('servitore').checked,
+        p_regolare: document.getElementById('p_regolare').checked, 
+        p_speciale: document.getElementById('p_speciale').checked,
+        missionario: document.getElementById('missionario').checked, 
+        anno_servizio: document.getElementById('pdf-anno-input-table').value,
+        mesi_dati: mesi.map((_, i) => ({
+            min: document.getElementById(`min_${i}`).checked, 
+            studi: document.getElementById(`studi_${i}`).value,
+            aus: document.getElementById(`aus_${i}`).checked, 
+            ore: document.getElementById(`ore_${i}`).value, 
+            obs: document.getElementById(`obs_${i}`).value
+        }))
+    };
+
+    // Recupero archivio e aggiornamento
+    let arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
+    const idx = arch.findIndex(i => String(i.id) === String(id));
+    
+    if (idx > -1) {
+        arch[idx] = data;
+    } else {
+        arch.push(data);
+    }
+
+    // 1. SALVATAGGIO EFFETTIVO
+    localStorage.setItem('archivio_congregazione', JSON.stringify(arch));
+
+    // 2. RESET DELLO STATO DI MODIFICA (Importante!)
+    // Da questo momento l'app sa che non ci sono più modifiche "pendenti"
+    hasUnsavedChanges = false; 
+
+    alert("Dati salvati correttamente.");
+    
+    // Ritorna alla home o alla lista
+    showHome();
+}
 
         function archiveCurrentYear() {
             const nome = document.getElementById('nome_cognome').value;
@@ -1078,6 +1117,15 @@ function resetFilters() {
                 window.open(`https://wa.me/?text=${encodedMsg}`, '_blank');
             }
         }
+window.onbeforeunload = function(e) {
+    if (hasUnsavedChanges) {
+        // Nota: i browser moderni mostrano un messaggio standard 
+        // ignorando il testo personalizzato, ma l'avviso apparirà comunque.
+        e.preventDefault(); 
+        e.returnValue = ''; 
+        return "Hai modifiche non salvate. Vuoi davvero uscire?";
+    }
+};
     </script>
 </body>
 </html>
