@@ -333,7 +333,7 @@
         <div class="ios-header no-print">
             <button class="btn btn-secondary" style="width:auto; padding:8px 15px;" onclick="showHome()">Indietro</button>
             <div style="display:flex; gap:5px;">
-                <button class="btn btn-group" id="btn-zip" style="width:auto; padding:8px 12px; font-size:12px;">ZIP PDF</button>
+                <button class="btn btn-group" id="btn-zip" style="width:auto; padding:8px 12px; font-size:12px;" onclick="generateZipFromList()">ZIP PDF</button>
                 <button id="btn-pdf-list" class="btn btn-export" style="display:none; width:auto; padding:8px 12px; font-size:12px;" onclick="printSimpleList()">LISTA PDF</button>
                 <button id="btn-share-all" class="btn btn-share" style="display:none; width:auto; padding:8px 12px; font-size:12px;" onclick="shareMancantiMenu()">Condividi</button>
                 <button class="btn btn-export" style="width:auto; padding:8px 12px; font-size:12px;" onclick="window.print()">Stampa</button>
@@ -361,9 +361,9 @@
             <label class="filter-label">Mesi mancanti</label>
             <select id="filter-missing" onchange="renderList()">
                 <option value="">Indifferente</option>
-                <option value="1">Almeno 1</option>
-                <option value="3">Almeno 3</option>
-                <option value="6">Almeno 6 (Inattivi)</option>
+                <option value="1">ULTIMO RAPPORTO VUOTO</option>
+                <option value="3">IRREGOLARI</option>
+                <option value="6">INATTIVI (Almeno 6)</option>
             </select>
         </div>
     </div>
@@ -474,6 +474,7 @@
         const mesi = ["Settembre", "Ottobre", "Novembre", "Dicembre", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto"];
         let hasUnsavedChanges = false;
         let currentView = 'tutti';
+let filteredResults = [];
         let isNewModule = false;
         
         const mb = document.getElementById('ministero-body');
@@ -521,21 +522,27 @@
             hasUnsavedChanges = false;
         }
 
-        function openList(tipo) {
-            currentView = tipo;
-            showHome(); document.getElementById('home-screen').style.display = 'none';
-            document.getElementById('list-screen').style.display = 'block';
-            document.getElementById('btn-share-all').style.display = (tipo === 'mancanti') ? 'inline-block' : 'none';
-            document.getElementById('btn-pdf-list').style.display = (tipo === 'inattivi') ? 'inline-block' : 'none';
-            
-            if(tipo === 'pionieri') document.getElementById('list-title').innerText = 'Elenco Pionieri';
-            else if(tipo === 'mancanti') document.getElementById('list-title').innerText = 'Rapporti Mancanti (' + mesi[getCurrentServiceMonthIndex()] + ')';
-            else if(tipo === 'inattivi') document.getElementById('list-title').innerText = 'Gruppo Inattivi (6+ mesi)';
-            else document.getElementById('list-title').innerText = 'Anagrafica Totale';
-            
-            document.getElementById('btn-zip').onclick = () => downloadZip(tipo);
-            renderList();
-        }
+function openList(tipo) {
+    currentView = tipo; // Imposta la vista (pionieri, mancanti, inattivi o totale)
+    
+    // Resetta i campi di ricerca manuale per evitare conflitti
+    document.getElementById('main-search-input').value = "";
+    document.getElementById('filter-role').value = "";
+    document.getElementById('filter-missing').value = "";
+    
+    showHome(); // Chiude eventuali form aperti
+    document.getElementById('home-screen').style.display = 'none';
+    document.getElementById('list-screen').style.display = 'block';
+    
+    // Cambia il titolo della pagina in base alla sezione
+    const tit = document.getElementById('list-title');
+    if(tipo === 'pionieri') tit.innerText = 'Elenco Pionieri';
+    else if(tipo === 'mancanti') tit.innerText = 'Rapporti Mancanti (' + mesi[getCurrentServiceMonthIndex()] + ')';
+    else if(tipo === 'inattivi') tit.innerText = 'Inattivi (Ultimi 6 mesi)';
+    else tit.innerText = 'Anagrafica Totale';
+    
+    renderList(); // Applica i filtri
+}
 function toggleFilterSection() {
     const fs = document.getElementById('filter-section-ui');
     const btn = document.getElementById('toggle-filter-btn');
@@ -556,49 +563,87 @@ function resetFilters() {
     document.getElementById('filter-baptism').value = "";
     renderList();
 }
-        function renderList() {
+function renderList() {
     let arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
     const gruppi = JSON.parse(localStorage.getItem('gruppi_servizio') || '[]');
     
-    // Legge i valori dai filtri
     const searchVal = document.getElementById('main-search-input').value.toLowerCase();
     const roleVal = document.getElementById('filter-role').value;
     const missingVal = document.getElementById('filter-missing').value;
-    const birthVal = document.getElementById('filter-birth').value;
-    const baptVal = document.getElementById('filter-baptism').value;
 
-    // Filtra l'array in base ai criteri inseriti
+    const oggi = new Date();
+    const meseSolare = oggi.getMonth(); 
+    const currentIdx = getCurrentServiceMonthIndex();
+    const currentServiceYear = (meseSolare >= 8) ? oggi.getFullYear() + 1 : oggi.getFullYear();
+
     arch = arch.filter(i => {
+        const isOldYear = (!i.anno_servizio || parseInt(i.anno_servizio) < currentServiceYear);
+
+        // --- LOGICA INATTIVI (6 mesi consecutivi) ---
+        let mesiInattivoConsecutivi = 0;
+        for (let step = 0; step < 6; step++) {
+            let checkIdx = currentIdx - step;
+            if (checkIdx < 0) checkIdx += 12;
+            const d = (i.mesi_dati && i.mesi_dati[checkIdx]) ? i.mesi_dati[checkIdx] : {};
+            if (isOldYear || (!d.min && (!d.ore || parseInt(d.ore) === 0))) mesiInattivoConsecutivi++;
+        }
+
+        // --- FILTRI TENDINA ---
+        if (missingVal === "1") {
+            const d = (i.mesi_dati && i.mesi_dati[currentIdx]) ? i.mesi_dati[currentIdx] : {};
+            if (!isOldYear && d.min) return false;
+        } 
+        else if (missingVal === "3") { // IRREGOLARI
+            let countMancanti = 0;
+            for (let m = 0; m <= currentIdx; m++) {
+                if (isOldYear || !i.mesi_dati[m].min) countMancanti++;
+            }
+            if (countMancanti < 3) return false;
+        } 
+        else if (missingVal === "6") {
+            if (mesiInattivoConsecutivi < 6) return false;
+        }
+
+        // --- VISTE HOME ---
+        if (currentView === 'mancanti') {
+            const d = (i.mesi_dati && i.mesi_dati[currentIdx]) ? i.mesi_dati[currentIdx] : {};
+            if (!isOldYear && d.min) return false;
+        }
+        if (currentView === 'inattivi' && mesiInattivoConsecutivi < 6) return false;
+        if (currentView === 'pionieri' && !i.p_regolare && !i.p_speciale && !i.missionario) return false;
+
         if (searchVal && !i.nome_cognome.toLowerCase().includes(searchVal)) return false;
         if (roleVal && !i[roleVal]) return false;
-        if (birthVal && !i.data_nascita.includes(birthVal)) return false;
-        if (baptVal && !i.data_battesimo.includes(baptVal)) return false;
-        if (missingVal) {
-            const countMissing = i.mesi_dati.filter(m => !m.min && !m.ore && !m.studi).length;
-            if (countMissing < parseInt(missingVal)) return false;
-        }
+
         return true;
     });
 
-    arch.sort((a,b) => a.nome_cognome.localeCompare(b.nome_cognome));
-    filteredResults = arch; // Serve per far funzionare correttamente la stampa ZIP e PDF della lista filtrata
+    arch.sort((a,b) => (a.nome_cognome || "").localeCompare(b.nome_cognome || ""));
+    
+    // AGGIORNAMENTO VITALE PER LO ZIP
+    filteredResults = [...arch]; 
 
-    document.getElementById('proclamatore-list').innerHTML = arch.length ? arch.map(item => {
+    const container = document.getElementById('proclamatore-list');
+    if (arch.length === 0) {
+        container.innerHTML = '<p style="text-align:center; padding:20px; color:gray;">Nessun nominativo trovato.</p>';
+        return;
+    }
+
+    container.innerHTML = arch.map(item => {
         const g = gruppi.find(x => String(x.sorveglianteId) === String(item.id) || String(x.assistenteId) === String(item.id) || (x.membriIds || []).map(String).includes(String(item.id)));
         return `
             <div class="list-item">
-                <div style="flex: 1;">
-                    <span class="name-tag" onclick="openForm('${item.id}', false)">${item.nome_cognome}</span>
-                    <span class="contact-preview">${item.domicilio ? '📍 '+item.domicilio : ''} ${item.telefono ? ' | 📞 '+item.telefono : ''} | 👥 ${g ? g.titolo : "Nessun Gruppo"}</span>
+                <div style="flex: 1;" onclick="openForm('${item.id}', false)">
+                    <span class="name-tag">${item.nome_cognome}</span>
+                    <span class="contact-preview">${item.telefono || ''} | 👥 ${g ? g.titolo : "Nessun Gruppo"}</span>
                 </div>
-                <button class="btn btn-danger" style="width:35px; height:35px; padding:0; border-radius:50%;" onclick="deleteItem('${item.id}')">✕</button>
+                <button class="btn btn-danger" style="width:35px; height:35px; border-radius:50%;" onclick="deleteItem('${item.id}')">✕</button>
             </div>`;
-    }).join('') : '<p style="text-align:center; padding:20px;">Nessun risultato.</p>';
+    }).join('');
 }
-
-        async function printSimpleList() {
-            const listItems = Array.from(document.querySelectorAll('.list-item'));
-            if (listItems.length === 0) return alert("Nulla da stampare.");
+       async function printSimpleList() {
+    const listItems = Array.from(document.querySelectorAll('.list-item'));
+    if (listItems.length === 0) return alert("Nulla da stampare.");
             
             let html = `<div style="padding:20mm; font-family:Arial, sans-serif;">
                 <h1 style="text-align:center; border-bottom:1px solid #000; padding-bottom:10px;">${document.getElementById('list-title').innerText}</h1>
@@ -862,139 +907,91 @@ document.getElementById('s21-form').addEventListener('input', () => {
 
         function deleteHistoryItem(id) { if(confirm("Eliminare?")) { let s = JSON.parse(localStorage.getItem('storico_congregazione') || '[]').filter(i => String(i.id_archivio) !== String(id)); localStorage.setItem('storico_congregazione', JSON.stringify(s)); renderHistory(); } }
 
-        async function downloadZip(tipo) {
-            let arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
-            if (tipo === 'pionieri') arch = arch.filter(i => i.p_regolare || i.p_speciale || i.missionario);
-            if (tipo === 'inattivi') {
-                const currentIdx = getCurrentServiceMonthIndex();
-                arch = arch.filter(i => {
-                    const monthsToCheck = 6;
-                    let inactiveCount = 0;
-                    for (let step = 0; step < monthsToCheck; step++) {
-                        let checkIdx = currentIdx - step;
-                        if (checkIdx < 0) checkIdx += 12;
-                        const data = i.mesi_dati[checkIdx];
-                        if (!data.min && !data.ore) inactiveCount++;
-                    }
-                    return inactiveCount >= monthsToCheck;
-                });
-            }
-            if (!arch.length) return alert("Nessun dato.");
-            await generateZipFromList(arch, `Moduli_${tipo}.zip`);
-        }
+async function generateZipFromList(customList = null, zipFilename = "Moduli_S21.zip") {
+    // 1. Selezione dei dati
+    let dataToExport;
+    const arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
 
-        async function generateZipFromList(list, filename) {
-    document.getElementById('loader').style.display = 'flex';
-    const zip = new JSZip();
-    const worker = document.getElementById('hidden-worker');
-
-    for (let item of list) {
-        // Pulizia e clonazione pulita
-        worker.innerHTML = ''; 
-        const template = document.getElementById('pdf-template').cloneNode(true);
-        
-        // Reset trasformazioni per evitare errori di scala nel PDF
-        template.style.transform = "scale(1)";
-        template.style.margin = "0";
-        worker.appendChild(template);
-
-        // Popolamento dati nel clone
-        template.querySelector('#nome_cognome').value = item.nome_cognome;
-        template.querySelector('#pdf-anno-input-table').value = item.anno_servizio || "";
-        
-        // Gestione checkbox intestazione
-        if(item.maschio) template.querySelector('#maschio').checked = true;
-        if(item.femmina) template.querySelector('#femmina').checked = true;
-        // ... aggiungi qui gli altri campi come p_regolare, anziano, ecc. se necessari nello ZIP
-
-        const tbody = template.querySelector('#ministero-body');
-        tbody.innerHTML = mesi.map((m, idx) => {
-            const d = item.mesi_dati[idx];
-            return `<tr>
-                <td style="text-align:left; padding-left:5px;">${m}</td>
-                <td><input type="checkbox" ${d.min ? 'checked' : ''}></td>
-                <td><input type="number" value="${d.studi || ''}"></td>
-                <td><input type="checkbox" ${d.aus ? 'checked' : ''}></td>
-                <td><input type="number" value="${d.ore || ''}"></td>
-                <td style="text-align:left;"><input type="text" value="${d.obs || ''}" style="text-align:left;"></td>
-            </tr>`;
-        }).join('');
-
-        // Generazione PDF con impostazioni rigorose
-        const opt = {
-            margin: 0,
-            filename: `${item.nome_cognome}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
-                scale: 2, 
-                useCORS: true, 
-                logging: false,
-                width: 794 // Forza larghezza A4 in pixel
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        const blob = await html2pdf().set(opt).from(template).output('blob');
-        zip.file(`${item.nome_cognome.replace(/\s+/g, '_')}.pdf`, blob);
+    if (customList && Array.isArray(customList) && customList.length > 0) {
+        dataToExport = customList;
+    } else if (typeof filteredResults !== 'undefined' && filteredResults && filteredResults.length > 0) {
+        dataToExport = filteredResults;
+    } else {
+        dataToExport = arch;
     }
 
-    const content = await zip.generateAsync({type:"blob"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(content);
-    a.download = filename;
-    a.click();
-    document.getElementById('loader').style.display = 'none';
-}
+    if (dataToExport.length === 0) {
+        alert("Nessun dato da esportare.");
+        return;
+    }
 
-        async function saveAndPrintSingle() {
-    const element = document.getElementById('pdf-template');
-    const wrapper = document.getElementById('form-wrapper-responsive');
-    const nomeProclamatore = document.getElementById('nome_cognome').value || 'Modulo_S21';
-    
-    // 1. Salvataggio stato attuale dello zoom
-    const originalTransform = element.style.transform;
-    const originalMarginBottom = element.style.marginBottom;
-    const originalMarginRight = element.style.marginRight;
-    const currentZoom = document.getElementById('zoom-slider').value;
+    const loader = document.getElementById('loader');
+    const progressText = document.getElementById('progress-text');
+    if (loader) loader.style.display = 'flex';
 
-    // 2. Reset temporaneo per la "scansione" PDF
-    // Portiamo la scala a 1 e rimuoviamo i margini di compensazione dello scroll
-    element.style.transform = 'scale(1)';
-    element.style.marginBottom = '0px';
-    element.style.marginRight = '0px';
-    
-    // Mostriamo il loader
-    document.getElementById('loader').style.display = 'flex';
-    document.getElementById('progress-text').innerText = "Generazione PDF in corso...";
-
-    const opt = {
-        margin: 0,
-        filename: `${nomeProclamatore}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2, // Aumenta la qualità del PDF
-            useCORS: true,
-            letterRendering: true,
-            scrollY: 0,
-            scrollX: 0
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+    const zip = new JSZip();
 
     try {
-        // Generazione effettiva
-        await html2pdf().set(opt).from(element).save();
+        for (let i = 0; i < dataToExport.length; i++) {
+            const item = dataToExport[i];
+            
+            if (progressText) {
+                progressText.innerText = `Generazione PDF ${i + 1} di ${dataToExport.length}\n${item.nome_cognome}`;
+            }
+
+            // 2. APRIAMO IL FORM (per assicurarci che gli elementi esistano nel DOM)
+            // Usiamo 'false' per indicare che non è un nuovo modulo
+            openForm(item.id, false); 
+
+            // 3. CARICHIAMO I DATI (Questa è la tua funzione corretta)
+            loadData(item.id); 
+
+            // 4. ATTESA RENDERING
+            // Aspettiamo che il browser riempia i campi input e le tabelle
+            await new Promise(r => setTimeout(r, 400));
+
+            // 5. PUNTIAMO AL TEMPLATE CORRETTO
+            const element = document.getElementById('pdf-template'); 
+
+            // 6. OPZIONI PDF
+            const opt = {
+                margin: 0,
+                filename: `${item.nome_cognome}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true,
+                    letterRendering: true,
+                    scrollY: 0
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // 7. GENERAZIONE BLOB
+            const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+            
+            // 8. AGGIUNTA ALLO ZIP
+            const safeName = item.nome_cognome.replace(/[^a-z0-9]/gi, '_').toUpperCase();
+            zip.file(`${safeName}.pdf`, pdfBlob);
+        }
+
+        if (progressText) progressText.innerText = "Finalizzazione ZIP...";
+
+        const zipContent = await zip.generateAsync({ type: "blob" });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(zipContent);
+        link.download = zipFilename;
+        link.click();
+
     } catch (error) {
-        console.error("Errore durante la generazione del PDF:", error);
-        alert("Si è verificato un errore durante la creazione del PDF.");
+        console.error("Errore ZIP:", error);
+        alert("Errore tecnico: " + error.message);
     } finally {
-        // 3. Ripristino dello zoom precedente per la visualizzazione su smartphone
-        element.style.transform = originalTransform;
-        element.style.marginBottom = originalMarginBottom;
-        element.style.marginRight = originalMarginRight;
-        
-        // Nascondiamo il loader
-        document.getElementById('loader').style.display = 'none';
+        if (loader) loader.style.display = 'none';
+        // Torniamo alla visualizzazione lista
+        showHome();
+        document.getElementById('home-screen').style.display = 'none';
+        document.getElementById('list-screen').style.display = 'block';
     }
 }
 
@@ -1126,6 +1123,185 @@ window.onbeforeunload = function(e) {
         return "Hai modifiche non salvate. Vuoi davvero uscire?";
     }
 };
-    </script>
+// ==========================================
+// FUNZIONE PER IL PDF SINGOLO (RIPRISTINATA)
+// ==========================================
+function downloadPDF() {
+    // 1. Identifica l'elemento del modulo (ID corretto nel tuo file: pdf-template)
+    const element = document.getElementById('pdf-template');
+    if (!element) {
+        alert("Errore: Modulo non trovato.");
+        return;
+    }
+
+    // 2. Recupera il nome dal campo testo del modulo
+    const nomeProclamatore = document.getElementById('pdf-nome').innerText || 'Modulo_S21';
+
+    // 3. Imposta le opzioni
+    const opt = {
+        margin: 0,
+        filename: nomeProclamatore.toUpperCase() + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true,
+            letterRendering: true,
+            scrollY: 0
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // 4. Esegui il salvataggio
+    html2pdf().set(opt).from(element).save();
+}
+
+// ==========================================
+// FUNZIONE PER LO ZIP (CORRETTA)
+// ==========================================
+async function generateZipFromList(customList = null, zipFilename = "Moduli_S21.zip") {
+    let dataToExport;
+    const arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
+
+    if (customList && Array.isArray(customList) && customList.length > 0) {
+        dataToExport = customList;
+    } else if (typeof filteredResults !== 'undefined' && filteredResults && filteredResults.length > 0) {
+        dataToExport = filteredResults;
+    } else {
+        dataToExport = arch;
+    }
+
+    if (dataToExport.length === 0) {
+        alert("Nessun dato da esportare.");
+        return;
+    }
+
+    const loader = document.getElementById('loader');
+    const progressText = document.getElementById('progress-text');
+    if (loader) loader.style.display = 'flex';
+
+    const zip = new JSZip();
+
+    try {
+        for (let i = 0; i < dataToExport.length; i++) {
+            const item = dataToExport[i];
+            
+            if (progressText) {
+                progressText.innerText = `Generazione PDF ${i + 1} di ${dataToExport.length}\n${item.nome_cognome}`;
+            }
+
+            // Popola il modulo con le funzioni originali
+            openForm(item.id, false); 
+            loadData(item.id); 
+
+            // Attesa per il rendering
+            await new Promise(r => setTimeout(r, 400));
+
+            const element = document.getElementById('pdf-template');
+            
+            const opt = {
+                margin: 0,
+                html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+            const safeName = item.nome_cognome.replace(/[^a-z0-9]/gi, '_').toUpperCase();
+            zip.file(safeName + ".pdf", pdfBlob);
+        }
+
+        const zipContent = await zip.generateAsync({ type: "blob" });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(zipContent);
+        link.download = zipFilename;
+        link.click();
+
+    } catch (error) {
+        console.error("Errore ZIP:", error);
+        alert("Errore tecnico: " + error.message);
+    } finally {
+        if (loader) loader.style.display = 'none';
+        showHome();
+    }
+}
+// --- FUNZIONE PER SALVARE E GENERARE IL PDF DEL SINGOLO MODULO ---
+async function saveAndPrintSingle() {
+    const nome = document.getElementById('nome_cognome').value;
+    if (!nome) {
+        alert("Inserire almeno il nome e cognome prima di generare il PDF.");
+        return;
+    }
+    
+    // Salvataggio automatico prima della stampa
+    saveDataSilently();
+
+    const loader = document.getElementById('loader');
+    if (loader) loader.style.display = 'flex';
+
+    try {
+        // Puntiamo al template corretto (id="pdf-template")
+        const element = document.getElementById('pdf-template');
+        
+        const opt = {
+            margin: 0,
+            filename: nome.toUpperCase() + '_S21.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 2, 
+                useCORS: true,
+                letterRendering: true,
+                scrollY: 0
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+        console.error("Errore PDF:", error);
+        alert("Errore durante la generazione del PDF.");
+    } finally {
+        if (loader) loader.style.display = 'none';
+    }
+}
+
+// Funzione di supporto per salvare i dati senza mostrare messaggi di conferma
+function saveDataSilently() {
+    const id = document.getElementById('entry-id').value;
+    const data = {
+        id, 
+        nome_cognome: document.getElementById('nome_cognome').value, 
+        domicilio: document.getElementById('domicilio').value, 
+        telefono: document.getElementById('telefono').value,
+        data_nascita: document.getElementById('data_nascita').value, 
+        data_battesimo: document.getElementById('data_battesimo').value,
+        maschio: document.getElementById('maschio').checked, 
+        femmina: document.getElementById('femmina').checked,
+        altre_pecore: document.getElementById('altre_pecore').checked, 
+        unto: document.getElementById('unto').checked,
+        anziano: document.getElementById('anziano').checked, 
+        servitore: document.getElementById('servitore').checked,
+        p_regolare: document.getElementById('p_regolare').checked, 
+        p_speciale: document.getElementById('p_speciale').checked,
+        missionario: document.getElementById('missionario').checked, 
+        anno_servizio: document.getElementById('pdf-anno-input-table').value,
+        mesi_dati: mesi.map((_, i) => ({
+            min: document.getElementById(`min_${i}`).checked, 
+            studi: document.getElementById(`studi_${i}`).value,
+            aus: document.getElementById(`aus_${i}`).checked, 
+            ore: document.getElementById(`ore_${i}`).value, 
+            obs: document.getElementById(`obs_${i}`).value
+        }))
+    };
+
+    let arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
+    const idx = arch.findIndex(i => String(i.id) === String(id));
+    if (idx > -1) {
+        arch[idx] = data;
+    } else {
+        arch.push(data);
+    }
+    localStorage.setItem('archivio_congregazione', JSON.stringify(arch));
+    hasUnsavedChanges = false;
+}
+ </script>
 </body>
 </html>
