@@ -64,11 +64,11 @@
     min-height: 296mm; 
     padding: 10mm 15mm; 
     background: white; 
-    margin: 0 auto; 
+    margin: 0 auto; /* Mantiene il foglio al centro nel contenitore */
     box-sizing: border-box; 
-    /* Cambiamo l'origine a top left per facilitare il calcolo dello scroll */
-    transform-origin: top left; 
+    transform-origin: top center; /* Impostazione di base: zoom dal centro */
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: transform 0.1s ease-out; /* Rende lo zoom più fluido */
 }
 
     .pdf-title { 
@@ -642,26 +642,36 @@ function resetFilters() {
         function applyManualZoom(val) {
     const sheet = document.getElementById('pdf-template');
     const wrapper = document.getElementById('form-wrapper-responsive');
-    
-    // Applica lo zoom al foglio
+    if (!sheet || !wrapper) return;
+
+    const baseWidth = 794; // Larghezza A4 in pixel
+    const zoomedWidth = baseWidth * val;
+
+    // Applica lo zoom
     sheet.style.transform = `scale(${val})`;
 
-    // Forza il contenitore ad essere grande quanto il foglio zoomato
-    // 794px è la larghezza di un A4 a 96dpi
-    const zoomedWidth = 794 * val;
-    const zoomedHeight = 1123 * val;
-
-    // Creiamo uno spazio vuoto che forzi lo scroll orizzontale e verticale
-    sheet.style.marginBottom = `-${1123 - zoomedHeight}px`;
-    sheet.style.marginRight = `-${794 - zoomedWidth}px`;
-    
-    // Centratura se il foglio è più piccolo dello schermo
-    if (zoomedWidth < window.innerWidth) {
-        wrapper.style.display = "flex";
-        wrapper.style.justifyContent = "center";
+    // LOGICA DI CENTRATURA DESKTOP / MOBILE
+    if (zoomedWidth <= window.innerWidth) {
+        // Se il foglio zoomato sta nello schermo: centra tutto
+        sheet.style.transformOrigin = 'top center';
+        sheet.style.margin = '0 auto'; 
+        wrapper.style.display = 'flex';
+        wrapper.style.justifyContent = 'center';
+        
+        // Reset dei margini di compensazione
+        sheet.style.marginRight = '0px';
+        sheet.style.marginBottom = '0px';
     } else {
-        wrapper.style.display = "block";
-        wrapper.style.justifyContent = "unset";
+        // Se il foglio è più grande dello schermo: ancora a sinistra per permettere lo scroll
+        sheet.style.transformOrigin = 'top left';
+        sheet.style.margin = '0';
+        wrapper.style.display = 'block';
+        wrapper.style.justifyContent = 'unset';
+
+        // Compensazione per lo scroll (evita che il foglio "sparisca" sotto i bordi)
+        const zoomedHeight = 1123 * val;
+        sheet.style.marginRight = `-${baseWidth - zoomedWidth}px`;
+        sheet.style.marginBottom = `-${1123 - zoomedHeight}px`;
     }
 }
 
