@@ -59,16 +59,15 @@
     hr { border: 0; height: 1px; background: #D1D1D6; margin: 10px 0; width: 100%; }
 
     /* --- STILI MODULO S-21 (PDF) --- */
-   .sheet { 
+ .sheet { 
     width: 210mm; 
     min-height: 296mm; 
     padding: 10mm 15mm; 
     background: white; 
-    margin: 0 auto; /* Mantiene il foglio al centro nel contenitore */
     box-sizing: border-box; 
-    transform-origin: top center; /* Impostazione di base: zoom dal centro */
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    transition: transform 0.1s ease-out; /* Rende lo zoom più fluido */
+    /* Rimosso margin: 0 auto e transform-origin fisso per gestirli via JS */
+    flex-shrink: 0; /* Impedisce al flex di schiacciare il foglio */
 }
 
     .pdf-title { 
@@ -180,14 +179,17 @@
     .group-actions { display: flex; gap: 5px; }
     
     /* --- NUOVA LOGICA DI ZOOM PER VISUALIZZAZIONE SMARTPHONE --- */
-   #form-wrapper-responsive { 
+ #form-wrapper-responsive { 
     width: 100%; 
-    overflow: auto; /* Permette scorrimento sia verticale che orizzontale */
-    display: block; /* Cambiato da flex a block per gestire meglio lo scroll orizzontale */
+    height: calc(100vh - 120px); /* Altezza dinamica sottraendo l'header */
+    overflow: auto; 
+    display: flex; /* Cambiato in flex per centratura */
+    justify-content: center; /* Centra orizzontalmente */
+    align-items: flex-start; /* Allinea in alto per permettere lo scroll naturale */
     padding: 20px;
     box-sizing: border-box;
-    -webkit-overflow-scrolling: touch;
     background-color: #525659;
+    -webkit-overflow-scrolling: touch;
 }
     
     .zoom-controls {
@@ -277,6 +279,8 @@
 
 </head>
 <body>
+<div id="pdf-render-engine" style="position: absolute; left: -9999px; top: -9999px; width: 794px; background: white;">
+    </div>
 
     <div id="loader">
         <div style="font-size: 20px; font-weight: bold;">Generazione File...</div>
@@ -813,42 +817,46 @@ document.getElementById('s21-form').addEventListener('input', () => {
 
         // LOGICA DI ZOOM MIGLIORATA
         function applyManualZoom(val) {
-    const container = document.querySelector('.form-container');
-    if (container) {
-        container.style.transform = `scale(${val})`;
-        container.style.transformOrigin = 'top center';
+    const sheet = document.getElementById('pdf-template');
+    if (sheet) {
+        sheet.style.transform = `scale(${val})`;
+        sheet.style.transformOrigin = 'top center';
+        
+        // Calcoliamo lo spazio occupato dopo lo zoom per evitare che i bordi vengano tagliati
+        const scaledHeight = 296 * 3.78 * val; // Conversione mm in px approssimativa
+        sheet.style.marginBottom = `-${(1 - val) * 100}%`; 
     }
 }
-        function autoFitSheet() {
+
+function autoFitSheet() {
     const container = document.getElementById('form-wrapper-responsive');
     const sheet = document.getElementById('pdf-template');
     if (!container || !sheet) return;
 
-    // Larghezza disponibile (con un piccolo margine di 10px)
-    const availableWidth = window.innerWidth - 10;
-    const sheetWidth = 794; // Larghezza fissa del modulo A4 in pixel (210mm)
+    // Reset dello scroll per calcolare correttamente
+    container.scrollLeft = 0;
+    container.scrollTop = 0;
 
-    // Calcola la scala necessaria per far stare il foglio nel display
+    const availableWidth = container.clientWidth - 40; // 40px di padding
+    const sheetWidth = 794; // 210mm in pixel a 96dpi
+
     let scale = availableWidth / sheetWidth;
 
-    // Applica un limite massimo (non ingrandire oltre il 100% su desktop)
+    // Limiti di zoom
     if (scale > 1) scale = 1; 
-    // Applica un limite minimo per evitare che diventi minuscolo
     if (scale < 0.3) scale = 0.3;
 
-    // Applica lo zoom allo slider e al modulo
     document.getElementById('zoom-slider').value = scale;
     applyManualZoom(scale);
-
-    // Centratura forzata tramite scroll
-    container.scrollLeft = (sheetWidth * scale - window.innerWidth) / 2;
 }
 
-        window.addEventListener('resize', () => {
-            if (document.getElementById('form-screen').style.display === 'block') {
-                autoFitSheet();
-            }
-        });
+// Assicurati che il resize funzioni bene
+window.addEventListener('resize', () => {
+    if (document.getElementById('form-screen').style.display === 'block') {
+        autoFitSheet();
+    }
+});
+
 
         function loadData(id) {
             const arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
@@ -992,44 +1000,44 @@ document.getElementById('s21-form').addEventListener('input', () => {
         function filterHistory(v) { renderHistory(v); }
 
           async function downloadArchivedPDF(id_archivio) {
-            const storico = JSON.parse(localStorage.getItem('storico_congregazione') || '[]');
-            const item = storico.find(i => String(i.id_archivio) === String(id_archivio));
-            if(!item) return;
-            const worker = document.getElementById('hidden-worker');
-            worker.innerHTML = document.getElementById('pdf-template').outerHTML;
-            const clone = worker.querySelector('.sheet');
-            clone.querySelector('#nome_cognome').value = item.nome_cognome;
-            clone.querySelector('#pdf-anno-input-table').value = item.anno_servizio || "";
-            const tbody = clone.querySelector('#ministero-body');
-            tbody.innerHTML = item.mesi_dati.map((m, idx) => `<tr><td style="text-align:left;">${mesi[idx]}</td><td><input type="checkbox" ${m.min ? 'checked' : ''}></td><td><input type="number" value="${m.studi}"></td><td><input type="checkbox" ${m.aus ? 'checked' : ''}></td><td><input type="number" value="${m.ore}"></td><td><input type="text" value="${m.obs}"></td></tr>`).join('');
-            await html2pdf().set({ margin:0, filename:`Storico_${item.nome_cognome}.pdf`, html2canvas:{scale:2, scrollY:0}, jsPDF:{unit:'mm', format:'a4'} }).from(clone).save();
-        }        function deleteHistoryItem(id) { if(confirm("Eliminare?")) { let s = JSON.parse(localStorage.getItem('storico_congregazione') || '[]').filter(i => String(i.id_archivio) !== String(id)); localStorage.setItem('storico_congregazione', JSON.stringify(s)); renderHistory(); } }
+    const storico = JSON.parse(localStorage.getItem('storico_congregazione') || '[]');
+    const item = storico.find(i => String(i.id_archivio) === String(id_archivio));
+    if(!item) return;
 
-async function generateZipFromList(customList = null, zipFilename = "Moduli_S21.zip") {
-    let dataToExport;
+    const worker = document.getElementById('hidden-worker');
+    // Forziamo il contenitore invisibile ad avere la larghezza esatta di un A4
+    worker.style.width = "794px"; 
+    worker.innerHTML = document.getElementById('pdf-template').outerHTML;
+    
+    const clone = worker.querySelector('.sheet');
+    // Rimuoviamo eventuali trasformazioni CSS che causano distorsione
+    clone.style.transform = "none";
+    clone.style.margin = "0";
+    clone.style.width = "210mm";
 
-    // Logica di precedenza:
-    // 1. Se viene passata una lista specifica (es. da un gruppo di servizio) usa quella.
-    // 2. Se ci sono filtri attivi nell'anagrafica (filteredResults), usa quelli.
-    // 3. Altrimenti, usa tutto l'archivio.
-    if (customList && customList.length > 0) {
-        dataToExport = customList;
-    } else if (filteredResults && filteredResults.length > 0) {
-        dataToExport = filteredResults;
-    } else {
-        dataToExport = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
-    }
+    // Popolamento dati nel clone
+    clone.querySelector('#nome_cognome').value = item.nome_cognome;
+    clone.querySelector('#pdf-anno-input-table').value = item.anno_servizio || "";
+    const tbody = clone.querySelector('#ministero-body');
+    tbody.innerHTML = item.mesi_dati.map((m, idx) => `
+        <tr>
+            <td style="text-align:left;">${mesi[idx]}</td>
+            <td><input type="checkbox" ${m.min ? 'checked' : ''}></td>
+            <td><input type="number" value="${m.studi}"></td>
+            <td><input type="checkbox" ${m.aus ? 'checked' : ''}></td>
+            <td><input type="number" value="${m.ore}"></td>
+            <td><input type="text" value="${m.obs}"></td>
+        </tr>`).join('');
 
-    if (dataToExport.length === 0) {
-        alert("Nessun record trovato da esportare.");
-        return;
-    }
+    const opt = { 
+        margin: 0, 
+        filename: `Storico_${item.nome_cognome}.pdf`, 
+        html2canvas: { scale: 2, scrollY: 0, windowWidth: 794 }, // windowWidth è la chiave
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+    };
 
-    // Conferma all'utente il numero di file
-    if (!confirm(`Verranno generati ${dataToExport.length} PDF. Vuoi continuare?`)) return;
-
-    // ... (resta invariato il codice per il caricamento del loader e il ciclo ZIP)
-    // ... (usa il ciclo for che hai già per generare i blob tramite html2pdf)
+    await html2pdf().set(opt).from(clone).save();
+    worker.innerHTML = ""; // Pulisci il worker
 }
 
         function deleteItem(id) { if(confirm("Eliminare?")) { localStorage.setItem('archivio_congregazione', JSON.stringify(JSON.parse(localStorage.getItem('archivio_congregazione') || '[]').filter(i => String(i.id) !== String(id)))); renderList(); } }
@@ -1212,38 +1220,79 @@ async function generateZipFromList(customList = null, zipFilename = "Moduli_S21.
         return;
     }
 
+    if (!confirm(`Verranno generati ${dataToExport.length} PDF di alta qualità. L'operazione potrebbe richiedere alcuni secondi. Continuare?`)) return;
+
     const loader = document.getElementById('loader');
     const progressText = document.getElementById('progress-text');
+    const worker = document.getElementById('hidden-worker');
+    
     if (loader) loader.style.display = 'flex';
-
     const zip = new JSZip();
 
     try {
         for (let i = 0; i < dataToExport.length; i++) {
             const item = dataToExport[i];
+            if (progressText) progressText.innerText = `Elaborazione ${i + 1} di ${dataToExport.length}\n${item.nome_cognome}`;
+
+            // --- FASE DI RENDERING NASCOSTO ---
+            // Usiamo il worker per evitare che lo zoom dello smartphone rovini il PDF
+            worker.style.width = "794px"; // Forza larghezza A4 desktop
+            worker.innerHTML = document.getElementById('pdf-template').outerHTML;
+            const clone = worker.querySelector('.sheet');
             
-            if (progressText) {
-                progressText.innerText = `Generazione PDF ${i + 1} di ${dataToExport.length}\n${item.nome_cognome}`;
-            }
+            // Reset stili del clone per evitare distorsioni da zoom residuo
+            clone.style.transform = "none";
+            clone.style.margin = "0";
+            clone.style.width = "210mm";
+            clone.style.display = "block";
 
-            // Popola il modulo con le funzioni originali
-            openForm(item.id, false); 
-            loadData(item.id); 
-
-            // Attesa per il rendering
-            await new Promise(r => setTimeout(r, 400));
-
-            const element = document.getElementById('pdf-template');
+            // Popolamento dati nel clone (Dati Anagrafici)
+            clone.querySelector('#nome_cognome').value = item.nome_cognome;
+            clone.querySelector('#pdf-anno-input-table').value = item.anno_servizio || "";
+            clone.querySelector('#data_nascita').value = item.data_nascita || "";
+            clone.querySelector('#data_battesimo').value = item.data_battesimo || "";
             
+            // Popolamento Checkbox
+            if(item.maschio) clone.querySelector('#maschio').checked = true;
+            if(item.femmina) clone.querySelector('#femmina').checked = true;
+            if(item.altre_pecore) clone.querySelector('#altre_pecore').checked = true;
+            if(item.unto) clone.querySelector('#unto').checked = true;
+            if(item.anziano) clone.querySelector('#anziano').checked = true;
+            if(item.servitore) clone.querySelector('#servitore').checked = true;
+            if(item.p_regolare) clone.querySelector('#p_regolare').checked = true;
+            if(item.p_speciale) clone.querySelector('#p_speciale').checked = true;
+            if(item.missionario) clone.querySelector('#missionario').checked = true;
+
+            // Popolamento Tabella Mesi
+            const tbody = clone.querySelector('#ministero-body');
+            tbody.innerHTML = item.mesi_dati.map((m, idx) => `
+                <tr>
+                    <td style="text-align:left; padding-left:5px;">${mesi[idx]}</td>
+                    <td><input type="checkbox" ${m.min ? 'checked' : ''}></td>
+                    <td><input type="number" value="${m.studi}"></td>
+                    <td><input type="checkbox" ${m.aus ? 'checked' : ''}></td>
+                    <td><input type="number" value="${m.ore}"></td>
+                    <td style="text-align:left;"><input type="text" value="${m.obs}" style="text-align:left;"></td>
+                </tr>`).join('');
+
+            // --- GENERAZIONE PDF ---
             const opt = {
                 margin: 0,
-                html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true, 
+                    scrollY: 0, 
+                    windowWidth: 794 // Forza html2pdf a simulare uno schermo desktop
+                },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+            const pdfBlob = await html2pdf().set(opt).from(clone).output('blob');
             const safeName = item.nome_cognome.replace(/[^a-z0-9]/gi, '_').toUpperCase();
             zip.file(safeName + ".pdf", pdfBlob);
+            
+            // Pulisci il worker per il prossimo giro
+            worker.innerHTML = "";
         }
 
         const zipContent = await zip.generateAsync({ type: "blob" });
@@ -1257,9 +1306,10 @@ async function generateZipFromList(customList = null, zipFilename = "Moduli_S21.
         alert("Errore tecnico: " + error.message);
     } finally {
         if (loader) loader.style.display = 'none';
-        showHome();
+        worker.innerHTML = "";
     }
 }
+
 // --- FUNZIONE PER SALVARE E GENERARE IL PDF DEL SINGOLO MODULO ---
 async function saveAndPrintSingle() {
     const element = document.getElementById('pdf-template');
