@@ -1193,7 +1193,7 @@ async function generateZipFromList(customList = null, zipFilename = "Moduli_S21.
         return;
     }
 
-    if (!confirm(`Verranno generati ${dataToExport.length} PDF di alta qualità. L'operazione potrebbe richiedere alcuni secondi. Continuare?`)) return;
+    if (!confirm(`Generazione di ${dataToExport.length} PDF. Continuare?`)) return;
 
     const loader = document.getElementById('loader');
     const progressText = document.getElementById('progress-text');
@@ -1207,36 +1207,38 @@ async function generateZipFromList(customList = null, zipFilename = "Moduli_S21.
             const item = dataToExport[i];
             if (progressText) progressText.innerText = `Elaborazione ${i + 1} di ${dataToExport.length}\n${item.nome_cognome}`;
 
-            // --- FASE DI RENDERING NASCOSTO ---
-            // Usiamo il worker per evitare che lo zoom dello smartphone rovini il PDF
-            worker.style.width = "794px"; // Forza larghezza A4 desktop
-            worker.innerHTML = document.getElementById('pdf-template').outerHTML;
-            const clone = worker.querySelector('.sheet');
-            
-            // Reset stili del clone per evitare distorsioni da zoom residuo
-            clone.style.transform = "none";
-            clone.style.margin = "0";
-            clone.style.width = "210mm";
-            clone.style.display = "block";
+            // --- 1. PREPARAZIONE WRAPPER (IDENTICO AL PDF SINGOLO) ---
+            worker.innerHTML = ""; 
+            const wrapper = document.createElement('div');
+            wrapper.style.width = "794px";
+            wrapper.style.height = "1123px";
+            wrapper.style.backgroundColor = "white";
+            wrapper.style.position = "relative";
+            wrapper.style.overflow = "hidden";
 
-            // Popolamento dati nel clone (Dati Anagrafici)
+            const templateHTML = document.getElementById('pdf-template').cloneNode(true);
+            templateHTML.style.transform = "none"; 
+            templateHTML.style.margin = "0";
+            templateHTML.style.width = "100%";
+            templateHTML.style.display = "block";
+
+            wrapper.appendChild(templateHTML);
+            worker.appendChild(wrapper);
+
+            const clone = wrapper.querySelector('.sheet');
+
+            // --- 2. POPOLAMENTO DATI NEL CLONE ---
             clone.querySelector('#nome_cognome').value = item.nome_cognome;
             clone.querySelector('#pdf-anno-input-table').value = item.anno_servizio || "";
             clone.querySelector('#data_nascita').value = item.data_nascita || "";
             clone.querySelector('#data_battesimo').value = item.data_battesimo || "";
             
-            // Popolamento Checkbox
-            if(item.maschio) clone.querySelector('#maschio').checked = true;
-            if(item.femmina) clone.querySelector('#femmina').checked = true;
-            if(item.altre_pecore) clone.querySelector('#altre_pecore').checked = true;
-            if(item.unto) clone.querySelector('#unto').checked = true;
-            if(item.anziano) clone.querySelector('#anziano').checked = true;
-            if(item.servitore) clone.querySelector('#servitore').checked = true;
-            if(item.p_regolare) clone.querySelector('#p_regolare').checked = true;
-            if(item.p_speciale) clone.querySelector('#p_speciale').checked = true;
-            if(item.missionario) clone.querySelector('#missionario').checked = true;
+            // Popolamento checkbox
+            const checks = ['maschio','femmina','altre_pecore','unto','anziano','servitore','p_regolare','p_speciale','missionario'];
+            checks.forEach(id => {
+                if(item[id]) clone.querySelector('#' + id).checked = true;
+            });
 
-            // Popolamento Tabella Mesi
             const tbody = clone.querySelector('#ministero-body');
             tbody.innerHTML = item.mesi_dati.map((m, idx) => `
                 <tr>
@@ -1248,23 +1250,25 @@ async function generateZipFromList(customList = null, zipFilename = "Moduli_S21.
                     <td style="text-align:left;"><input type="text" value="${m.obs}" style="text-align:left;"></td>
                 </tr>`).join('');
 
-            // --- GENERAZIONE PDF ---
+            // --- 3. CONFIGURAZIONE CALIBRATA (IDENTICA AL PDF SINGOLO) ---
             const opt = {
                 margin: 0,
+                image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
                     useCORS: true, 
-                    scrollY: 0, 
-                    windowWidth: 794 // Forza html2pdf a simulare uno schermo desktop
+                    width: 794,
+                    height: 1123,
+                    windowWidth: 794,
+                    scrollY: 0, scrollX: 0, x: 0, y: 0
                 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                jsPDF: { unit: 'px', format: [794, 1123], hotfixes: ['px_scaling'] }
             };
 
-            const pdfBlob = await html2pdf().set(opt).from(clone).output('blob');
+            const pdfBlob = await html2pdf().set(opt).from(wrapper).output('blob');
             const safeName = item.nome_cognome.replace(/[^a-z0-9]/gi, '_').toUpperCase();
             zip.file(safeName + ".pdf", pdfBlob);
             
-            // Pulisci il worker per il prossimo giro
             worker.innerHTML = "";
         }
 
@@ -1276,66 +1280,12 @@ async function generateZipFromList(customList = null, zipFilename = "Moduli_S21.
 
     } catch (error) {
         console.error("Errore ZIP:", error);
-        alert("Errore tecnico: " + error.message);
+        alert("Errore generazione ZIP");
     } finally {
         if (loader) loader.style.display = 'none';
         worker.innerHTML = "";
     }
 }
-
-// --- FUNZIONE PER SALVARE E GENERARE IL PDF DEL SINGOLO MODULO ---
-async function saveAndPrintSingle() {
-    const element = document.getElementById('pdf-template');
-    const wrapper = document.getElementById('form-wrapper-responsive');
-    const nomeProclamatore = document.getElementById('nome_cognome').value || 'Modulo_S21';
-    
-    // 1. Salvataggio stato attuale dello zoom
-    const originalTransform = element.style.transform;
-    const originalMarginBottom = element.style.marginBottom;
-    const originalMarginRight = element.style.marginRight;
-    const currentZoom = document.getElementById('zoom-slider').value;
-
-    // 2. Reset temporaneo per la "scansione" PDF
-    // Portiamo la scala a 1 e rimuoviamo i margini di compensazione dello scroll
-    element.style.transform = 'scale(1)';
-    element.style.marginBottom = '0px';
-    element.style.marginRight = '0px';
-    
-    // Mostriamo il loader
-    document.getElementById('loader').style.display = 'flex';
-    document.getElementById('progress-text').innerText = "Generazione PDF in corso...";
-
-    const opt = {
-        margin: 0,
-        filename: `${nomeProclamatore}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2, // Aumenta la qualità del PDF
-            useCORS: true,
-            letterRendering: true,
-            scrollY: 0,
-            scrollX: 0
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    try {
-        // Generazione effettiva
-        await html2pdf().set(opt).from(element).save();
-    } catch (error) {
-        console.error("Errore durante la generazione del PDF:", error);
-        alert("Si è verificato un errore durante la creazione del PDF.");
-    } finally {
-        // 3. Ripristino dello zoom precedente per la visualizzazione su smartphone
-        element.style.transform = originalTransform;
-        element.style.marginBottom = originalMarginBottom;
-        element.style.marginRight = originalMarginRight;
-        
-        // Nascondiamo il loader
-        document.getElementById('loader').style.display = 'none';
-    }
-}
-
 
 // Funzione di supporto per salvare i dati senza mostrare messaggi di conferma
 function saveDataSilently() {
@@ -1375,6 +1325,69 @@ function saveDataSilently() {
     }
     localStorage.setItem('archivio_congregazione', JSON.stringify(arch));
     hasUnsavedChanges = false;
+}
+// --- VERSIONE DEFINITIVA E CORRETTA PER PDF SINGOLO ---
+async function saveAndPrintSingle() {
+    const nomeProclamatore = document.getElementById('nome_cognome').value || 'Modulo_S21';
+    const worker = document.getElementById('hidden-worker');
+    
+    document.getElementById('loader').style.display = 'flex';
+    document.getElementById('progress-text').innerText = "Generazione PDF...";
+
+    try {
+        worker.innerHTML = ""; 
+        const wrapper = document.createElement('div');
+        wrapper.style.width = "794px";
+        wrapper.style.height = "1123px";
+        wrapper.style.backgroundColor = "white";
+        wrapper.style.position = "relative";
+        wrapper.style.overflow = "hidden";
+
+        // Cloniamo il template attuale
+        const templateHTML = document.getElementById('pdf-template').cloneNode(true);
+        templateHTML.style.transform = "none"; 
+        templateHTML.style.margin = "0";
+        templateHTML.style.width = "100%";
+        templateHTML.style.display = "block";
+
+        wrapper.appendChild(templateHTML);
+        worker.appendChild(wrapper);
+
+        // Copiamo i valori degli input (fondamentale per il PDF singolo)
+        const originalInputs = document.getElementById('pdf-template').querySelectorAll('input, select, textarea');
+        const clonedInputs = wrapper.querySelectorAll('input, select, textarea');
+        
+        originalInputs.forEach((input, index) => {
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                clonedInputs[index].checked = input.checked;
+            } else {
+                clonedInputs[index].value = input.value;
+            }
+        });
+
+        const opt = {
+            margin: 0,
+            filename: `${nomeProclamatore}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 2, 
+                useCORS: true, 
+                width: 794,
+                height: 1123,
+                windowWidth: 794,
+                scrollY: 0, scrollX: 0, x: 0, y: 0
+            },
+            jsPDF: { unit: 'px', format: [794, 1123], hotfixes: ['px_scaling'] }
+        };
+
+        await html2pdf().set(opt).from(wrapper).save();
+    } catch (e) {
+        console.error(e);
+        alert("Errore generazione PDF");
+    } finally {
+        worker.innerHTML = "";
+        document.getElementById('loader').style.display = 'none';
+    }
 }
  </script>
 </body>
