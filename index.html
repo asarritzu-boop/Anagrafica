@@ -1000,45 +1000,18 @@ window.addEventListener('resize', () => {
         function filterHistory(v) { renderHistory(v); }
 
           async function downloadArchivedPDF(id_archivio) {
-    const storico = JSON.parse(localStorage.getItem('storico_congregazione') || '[]');
-    const item = storico.find(i => String(i.id_archivio) === String(id_archivio));
-    if(!item) return;
-
-    const worker = document.getElementById('hidden-worker');
-    // Forziamo il contenitore invisibile ad avere la larghezza esatta di un A4
-    worker.style.width = "794px"; 
-    worker.innerHTML = document.getElementById('pdf-template').outerHTML;
-    
-    const clone = worker.querySelector('.sheet');
-    // Rimuoviamo eventuali trasformazioni CSS che causano distorsione
-    clone.style.transform = "none";
-    clone.style.margin = "0";
-    clone.style.width = "210mm";
-
-    // Popolamento dati nel clone
-    clone.querySelector('#nome_cognome').value = item.nome_cognome;
-    clone.querySelector('#pdf-anno-input-table').value = item.anno_servizio || "";
-    const tbody = clone.querySelector('#ministero-body');
-    tbody.innerHTML = item.mesi_dati.map((m, idx) => `
-        <tr>
-            <td style="text-align:left;">${mesi[idx]}</td>
-            <td><input type="checkbox" ${m.min ? 'checked' : ''}></td>
-            <td><input type="number" value="${m.studi}"></td>
-            <td><input type="checkbox" ${m.aus ? 'checked' : ''}></td>
-            <td><input type="number" value="${m.ore}"></td>
-            <td><input type="text" value="${m.obs}"></td>
-        </tr>`).join('');
-
-    const opt = { 
-        margin: 0, 
-        filename: `Storico_${item.nome_cognome}.pdf`, 
-        html2canvas: { scale: 2, scrollY: 0, windowWidth: 794 }, // windowWidth è la chiave
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-    };
-
-    await html2pdf().set(opt).from(clone).save();
-    worker.innerHTML = ""; // Pulisci il worker
-}
+            const storico = JSON.parse(localStorage.getItem('storico_congregazione') || '[]');
+            const item = storico.find(i => String(i.id_archivio) === String(id_archivio));
+            if(!item) return;
+            const worker = document.getElementById('hidden-worker');
+            worker.innerHTML = document.getElementById('pdf-template').outerHTML;
+            const clone = worker.querySelector('.sheet');
+            clone.querySelector('#nome_cognome').value = item.nome_cognome;
+            clone.querySelector('#pdf-anno-input-table').value = item.anno_servizio || "";
+            const tbody = clone.querySelector('#ministero-body');
+            tbody.innerHTML = item.mesi_dati.map((m, idx) => `<tr><td style="text-align:left;">${mesi[idx]}</td><td><input type="checkbox" ${m.min ? 'checked' : ''}></td><td><input type="number" value="${m.studi}"></td><td><input type="checkbox" ${m.aus ? 'checked' : ''}></td><td><input type="number" value="${m.ore}"></td><td><input type="text" value="${m.obs}"></td></tr>`).join('');
+            await html2pdf().set({ margin:0, filename:`Storico_${item.nome_cognome}.pdf`, html2canvas:{scale:2, scrollY:0}, jsPDF:{unit:'mm', format:'a4'} }).from(clone).save();
+        }        function deleteHistoryItem(id) { if(confirm("Eliminare?")) { let s = JSON.parse(localStorage.getItem('storico_congregazione') || '[]').filter(i => String(i.id_archivio) !== String(id)); localStorage.setItem('storico_congregazione', JSON.stringify(s)); renderHistory(); } }
 
         function deleteItem(id) { if(confirm("Eliminare?")) { localStorage.setItem('archivio_congregazione', JSON.stringify(JSON.parse(localStorage.getItem('archivio_congregazione') || '[]').filter(i => String(i.id) !== String(id)))); renderList(); } }
         function filterList(v) { document.querySelectorAll('.list-item').forEach(i => i.style.display = i.innerText.toLowerCase().includes(v.toLowerCase()) ? "" : "none"); }
