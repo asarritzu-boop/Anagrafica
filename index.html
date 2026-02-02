@@ -295,6 +295,33 @@
         <img src="icona-512.png" alt="Icona" class="home-icon">
         <div class="main-title">Anagrafica Congregazione</div>
         <div class="btn-container">
+
+<div style="display: flex; gap: 15px; padding: 20px; justify-content: center; flex-wrap: wrap; background: none;">
+    
+<div style="display: flex; gap: 8px; padding: 15px; justify-content: center; flex-wrap: nowrap; overflow-x: auto; background: none;">
+    
+    <button onclick="syncCloudAutomatica()" 
+        style="background: white; color: #128C7E; border: 1.5px solid #128C7E; padding: 6px 12px; border-radius: 20px; font-size: 9px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <span class="material-icons" style="font-size: 14px;"/span>
+        SYNC
+    </button>
+
+    <button onclick="mergeModuli()" 
+        style="background: white; color: #80242a; border: 1.5px solid #80242a; padding: 6px 12px; border-radius: 20px; font-size: 9px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <span class="material-icons" style="font-size: 14px;"/span>
+        DOPPI
+    </button>
+
+    <button onclick="condividiLinkModulo()" 
+        style="background: white; color: #128C7E; border: 1.5px solid #128C7E; padding: 6px 12px; border-radius: 20px; font-size: 9px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <span class="material-icons" style="font-size: 14px;"/span>
+        LINK
+    </button>
+    
+</div>    
+
+
+</button>
             <button class="btn btn-primary" onclick="openForm(null, true)">Nuovo Modulo S-21</button>
             <button class="btn btn-secondary" onclick="openList('tutti')">Anagrafica Totale</button>
            
@@ -1423,6 +1450,110 @@ async function saveAndPrintSingle() {
     } finally {
         worker.innerHTML = "";
         document.getElementById('loader').style.display = 'none';
+    }
+}
+// --- VERSIONE CORRETTA DELLA SINCRONIZZAZIONE ---
+async function syncCloudAutomatica() {
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbzgJVPkKpsS8lFlP3k2_rI09F26XkazfhL05Z06OS29sLcRuW4eR2_UxQQYJIzFgvQFUQ/exec"; // Assicurati che ci sia il tuo URL
+    
+    if(!confirm("Vuoi scaricare i rapporti dal Cloud?")) return;
+    
+    document.getElementById('loader').style.display = 'flex';
+    document.getElementById('progress-text').innerText = "Sincronizzazione Cloud...";
+
+    try {
+        const response = await fetch(webAppUrl);
+        const remoteData = await response.json();
+        let arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
+        let nuovi = 0;
+
+        remoteData.forEach(report => {
+            const nomeCerca = report.nomeCompleto.trim().toUpperCase();
+            let idx = arch.findIndex(p => p.nome_cognome.trim().toUpperCase() === nomeCerca);
+
+            // Se il proclamatore non esiste, lo creiamo
+            if (idx === -1) {
+                const nuovo = {
+                    id: Date.now() + Math.random(),
+                    nome_cognome: nomeCerca,
+                    data_nascita: "", data_battesimo: "",
+                    maschio: false, femmina: false, 
+                    altre_pecore: false, // Questo è il default, puoi metterlo false se preferisci
+                    unto: false,
+                    anziano: false, servitore: false, p_regolare: false, p_speciale: false, missionario: false,
+                    mesi_dati: mesi.map(() => ({ min: false, studi: 0, aus: false, ore: 0, obs: "" }))
+                };
+                arch.push(nuovo);
+                idx = arch.length - 1;
+                nuovi++;
+            }
+
+            // --- CORREZIONE SPUNTA MESE ---
+            const meseIdx = mesi.indexOf(report.mese.trim());
+            if (meseIdx > -1) {
+                // Controlliamo se ha scritto "Sì" (con o senza accento)
+                const haPartecipato = report.partecipato.toLowerCase().includes('sì') || 
+                                    report.partecipato.toLowerCase().includes('si');
+                
+                arch[idx].mesi_dati[meseIdx] = {
+                    min: haPartecipato, // Qui ora passerà TRUE se c'è "Sì"
+                    studi: parseInt(report.studi) || 0,
+                    aus: report.ausiliario.toLowerCase().includes('sì') || report.ausiliario.toLowerCase().includes('si'),
+                    ore: parseFloat(report.ore) || 0,
+                    obs: report.oss || ""
+                };
+            }
+        });
+
+        localStorage.setItem('archivio_congregazione', JSON.stringify(arch));
+        alert("Sincronizzazione completata!\nModuli nuovi: " + nuovi);
+        location.reload();
+    } catch (e) {
+        alert("Errore: " + e.message);
+    } finally {
+        document.getElementById('loader').style.display = 'none';
+    }
+}
+// --- FUNZIONE UNIONE MODULI (MERGE) ---
+function mergeModuli() {
+    let arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
+    const sorgente = prompt("Nome del modulo ERRATO (da cancellare):");
+    if (!sorgente) return;
+    const destinazione = prompt("Nome del modulo CORRETTO (da mantenere):");
+    if (!destinazione) return;
+
+    const idxSorg = arch.findIndex(p => p.nome_cognome.trim().toUpperCase() === sorgente.toUpperCase());
+    const idxDest = arch.findIndex(p => p.nome_cognome.trim().toUpperCase() === destinazione.toUpperCase());
+
+    if (idxSorg === -1 || idxDest === -1) {
+        alert("Uno o entrambi i nomi non trovati.");
+        return;
+    }
+
+    arch[idxSorg].mesi_dati.forEach((m, i) => {
+        if (m.ore > 0 || m.min) arch[idxDest].mesi_dati[i] = m;
+    });
+
+    arch.splice(idxSorg, 1);
+    localStorage.setItem('archivio_congregazione', JSON.stringify(arch));
+    alert("Unione completata!");
+    location.reload();
+}
+function condividiLinkModulo() {
+    const linkModulo = "https://docs.google.com/forms/d/e/1FAIpQLSfP5Yd2QRyFRnKlizSr3cAva--hsu24tikPU--y4LgL-LHSCw/viewform?usp=dialog";
+    const messaggio = "Ciao! Ecco il link per compilare il rapporto mensile: " + linkModulo;
+
+    // Prova a usare la funzione di condivisione nativa del sistema (funziona bene su smartphone)
+    if (navigator.share) {
+        navigator.share({
+            title: 'Rapporto di Servizio',
+            text: messaggio,
+            url: linkModulo,
+        }).catch((error) => console.log('Errore condivisione:', error));
+    } else {
+        // Se sei su PC o browser che non supporta navigator.share, apre WhatsApp Web come alternativa
+        const whatsappUrl = "https://wa.me/?text=" + encodeURIComponent(messaggio);
+        window.open(whatsappUrl, '_blank');
     }
 }
  </script>
