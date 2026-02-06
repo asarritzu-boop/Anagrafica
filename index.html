@@ -58,6 +58,70 @@
     .btn-archive { background: var(--ios-orange); color: white; }
     hr { border: 0; height: 1px; background: #D1D1D6; margin: 10px 0; width: 100%; }
 
+/* --- STILE TASTO GUIDA --- */
+.btn-help-home { 
+    position: absolute; 
+    top: 20px; 
+    left: 20px; /* Posizionato a sinistra */
+    width: 45px; 
+    height: 45px; 
+    background: white; 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+    border: none; 
+    cursor: pointer; 
+    z-index: 10; 
+    font-weight: bold;
+    font-size: 20px;
+    color: var(--accent-maroon);
+}
+
+/* --- STILE TESTO GUIDA --- */
+/* --- STILE TESTO GUIDA AGGIORNATO --- */
+.help-content {
+    /* Il primo valore (20px) è sopra, il secondo (30px) è ai lati, il terzo (40px) è sotto */
+    padding: 20px 30px 40px 30px !important; 
+    color: #333;
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 100%;       /* Fondamentale per il mobile */
+    box-sizing: border-box; /* Assicura che il padding non allarghi il div oltre lo schermo */
+    overflow-x: hidden;    /* Evita scroll laterali fastidiosi */
+    background-color: #fff;
+}
+
+/* Applichiamo un margine anche ai titoli e paragrafi per sicurezza */
+.help-content h3, 
+.help-content p, 
+.help-content ul {
+    margin-left: 0;
+    margin-right: 0;
+    word-wrap: break-word; /* Spezza le parole troppo lunghe se necessario */
+}
+
+.help-content ul {
+    padding-left: 20px; /* Rientro per i pallini dell'elenco */
+}
+
+/* Spazio extra per l'header della guida su mobile */
+#help-screen .ios-header {
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.help-content li {
+    margin-bottom: 12px;
+    padding-left: 5px;
+}
+.help-content strong {
+    color: #000;
+    font-weight: 700;
+}
+
     /* --- STILI MODULO S-21 (PDF) --- */
  .sheet { 
     width: 210mm; 
@@ -288,6 +352,9 @@
     </div>
 
     <div id="home-screen">
+<button class="btn-help-home" onclick="openHelp()">
+        ?
+    </button>
         <button class="btn-share-home" onclick="shareApp()">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#80242a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
         </button>
@@ -295,10 +362,11 @@
         <img src="icona-512.png" alt="Icona" class="home-icon">
         <div class="main-title">Anagrafica Congregazione</div>
         <div class="btn-container">
-
+            
             <button onclick="mostraReportFiliale()" style="background-color: #ffff;">
     <i class="fas fa-university"></i> REPORT PER LA FILIALE
-            </button>
+</button>
+
 
 <div style="display: flex; gap: 8px; padding: 15px; justify-content: center; flex-wrap: nowrap; overflow-x: auto; background: none;">
     
@@ -516,6 +584,89 @@
 
     <div id="hidden-worker" style="position: absolute; left: -9999px; top: 0; width: 210mm; background: white;"></div>
 
+
+<div id="help-screen" style="display: none;">
+    <div class="ios-header">
+        <button class="btn btn-secondary" style="width:auto; padding:8px 15px;" onclick="showHome()">Indietro</button>
+        <span style="font-weight:bold;">Guida all'utilizzo</span>
+        <div style="width:60px;"></div> </div>
+    
+    <div class="list-container help-content">
+        
+        <h3>1. Home Screen (Schermata Principale)</h3>
+        <p>Questa è la dashboard centrale dell'applicazione.</p>
+        <ul>
+            <li><strong>Pulsante Condividi (Icona in alto a destra):</strong> Permette di condividere l'URL dell'applicazione tramite le opzioni di sistema o WhatsApp.</li>
+            <li><strong>REPORT PER LA FILIALE:</strong> Genera un riepilogo statistico (totale attivi, pionieri, studi, ecc.) destinato alla filiale.</li>
+        </ul>
+        <p><strong>Barra Strumenti Rapida:</strong></p>
+        <ul>
+            <li><strong>SYNC:</strong> Avvia la sincronizzazione automatica con il cloud (se configurata).</li>
+            <li><strong>DOPPI:</strong> Funzionalità per identificare e unire moduli duplicati.</li>
+            <li><strong>LINK:</strong> Genera o condivide un link diretto al modulo.</li>
+        </ul>
+        <p><strong>Pulsanti Principali:</strong></p>
+        <ul>
+            <li><strong>Nuovo Modulo S-21:</strong> Apre un modulo vuoto per inserire un nuovo proclamatore.</li>
+            <li><strong>Anagrafica Totale:</strong> Visualizza l'elenco completo di tutti i proclamatori inseriti.</li>
+            <li><strong>Gruppi di Servizio:</strong> Accede alla gestione dei gruppi (assegnazione sorveglianti e membri).</li>
+            <li><strong>Storico Annuale:</strong> Permette di consultare i dati degli anni di servizio precedenti archiviati.</li>
+            <li><strong>Backup JSON:</strong> Esporta l'intero database locale in un file .json per sicurezza.</li>
+            <li><strong>Importa Backup:</strong> Carica un file .json precedentemente salvato per ripristinare i dati.</li>
+        </ul>
+
+        <h3>2. Gestione Elenco (List Screen)</h3>
+        <p>Accessibile tramite "Anagrafica Totale" o i filtri rapidi.</p>
+        <ul>
+            <li><strong>Barra di Ricerca:</strong> Filtra i nomi dei proclamatori in tempo reale.</li>
+            <li><strong>Filtri Avanzati (Toggle):</strong> Espande una sezione per ricerche mirate.</li>
+            <li><strong>Checkbox INCARICHI:</strong> Filtra per Anziano, Servitore, P. Regolare o Speciale.</li>
+            <li><strong>Checkbox CARATTERISTICHE:</strong> Filtra per sesso (Maschio/Femmina) e speranza (Altre Pecore/Unto).</li>
+            <li><strong>Menu a tendina Rapporti:</strong> Permette di isolare i "Rapporti Mancanti", "Irregolari" o "Inattivi".</li>
+            <li><strong>Resetta Filtri:</strong> Ripristina la visualizzazione completa.</li>
+        </ul>
+        <p><strong>Azioni di Gruppo (Header):</strong></p>
+        <ul>
+            <li><strong>ZIP PDF:</strong> Genera un archivio compresso contenente i PDF di tutti i proclamatori filtrati.</li>
+            <li><strong>Stampa:</strong> Apre la finestra di stampa del browser per la lista corrente.</li>
+        </ul>
+
+        <h3>3. Modulo S-21 (Scheda Proclamatore)</h3>
+        <p>L'interfaccia di inserimento dati che ricalca il modulo cartaceo ufficiale.</p>
+        <p><strong>Intestazione e Dati Anagrafici:</strong></p>
+        <ul>
+            <li><strong>Nome e cognome / Data di nascita / Data del battesimo:</strong> Campi di testo per l'identificazione.</li>
+            <li><strong>Checkbox Tipologia:</strong> Selezione di Sesso (M/F) e Speranza (Altre Pecore/Unto).</li>
+            <li><strong>Checkbox Incarichi:</strong> Selezione del ruolo teocratico (Anziano, Servitore, vari tipi di Pioniere).</li>
+        </ul>
+        <p><strong>Tabella Ministero (Dati mensili):</strong></p>
+        <ul>
+            <li><strong>ANNO DI SERVIZIO:</strong> Campo modificabile per indicare l'anno corrente (es. 2025).</li>
+            <li><strong>Partecipazione:</strong> Checkbox per indicare se il proclamatore ha fatto rapporto nel mese.</li>
+            <li><strong>Studi Biblici:</strong> Numero di studi tenuti nel mese.</li>
+            <li><strong>Pioniere Ausiliario:</strong> Spunta se il proclamatore ha servito come ausiliario in quel mese.</li>
+            <li><strong>Ore:</strong> Inserimento delle ore (obbligatorio per pionieri/missionari). Il Totale Ore in fondo alla tabella viene calcolato automaticamente.</li>
+            <li><strong>Osservazioni:</strong> Note libere per ogni singolo mese.</li>
+        </ul>
+        <p><strong>Controlli Modulo:</strong></p>
+        <ul>
+            <li><strong>Salva:</strong> Memorizza le modifiche nel database locale.</li>
+            <li><strong>PDF:</strong> Genera e scarica immediatamente la scheda S-21 in formato PDF professionale.</li>
+            <li><strong>Zoom Slider:</strong> Permette di ingrandire o rimpicciolire l'anteprima del modulo su dispositivi mobili.</li>
+            <li><strong>Archivia e Nuovo Anno:</strong> Sposta i dati correnti nello storico e pulisce la tabella per il nuovo anno di servizio.</li>
+        </ul>
+
+        <h3>4. Gestione Gruppi (Groups Screen)</h3>
+        <ul>
+            <li><strong>Nuovo Gruppo:</strong> Crea un nuovo raggruppamento.</li>
+            <li><strong>Titolo Gruppo:</strong> Nome identificativo (es. "Gruppo 1").</li>
+            <li><strong>Sorvegliante / Assistente:</strong> Menu a tendina per selezionare i fratelli responsabili dall'elenco anagrafico.</li>
+            <li><strong>Componenti Disponibili:</strong> Elenco con checkbox per aggiungere o rimuovere membri dal gruppo.</li>
+        </ul>
+    </div>
+</div>
+
+
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
@@ -571,6 +722,15 @@ let filteredResults = [];
             document.getElementById('home-screen').style.display = 'flex';
             hasUnsavedChanges = false;
         }
+
+function openHelp() {
+    // Nasconde la home
+    document.getElementById('home-screen').style.display = 'none';
+    // Mostra la schermata guida
+    document.getElementById('help-screen').style.display = 'block';
+    // Torna all'inizio della pagina
+    window.scrollTo(0,0);
+}
 
 function openList(tipo) {
     currentView = tipo; 
@@ -1557,7 +1717,8 @@ function condividiLinkModulo() {
         window.open(whatsappUrl, '_blank');
     }
 }
-        function mostraReportFiliale() {
+
+function mostraReportFiliale() {
     const nomiMesi = ["Settembre", "Ottobre", "Novembre", "Dicembre", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto"];
     
     // Calcoliamo il mese precedente a quello attuale
@@ -1674,7 +1835,8 @@ function calcolaS10Corretto() {
     `;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
-        
+
+
  </script>
 </body>
 </html>
