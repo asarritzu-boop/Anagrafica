@@ -1474,6 +1474,18 @@ async function generateZipFromList(customList = null, zipFilename = "Moduli_S21.
                     <td style="text-align:left;"><input type="text" value="${m.obs}" style="text-align:left;"></td>
                 </tr>`).join('');
 
+            // ============================================================
+            // MODIFICA: CALCOLO E INSERIMENTO DEL TOTALE ORE
+            // ============================================================
+            let sommaOre = 0;
+            item.mesi_dati.forEach(m => {
+                let val = parseFloat(m.ore);
+                if (!isNaN(val)) sommaOre += val;
+            });
+            // Inserisce il totale nel campo del footer del PDF clonato
+            clone.querySelector('#totale-ore').value = sommaOre > 0 ? sommaOre : "";
+            // ============================================================
+
             // --- 3. CONFIGURAZIONE CALIBRATA (IDENTICA AL PDF SINGOLO) ---
             const opt = {
                 margin: 0,
