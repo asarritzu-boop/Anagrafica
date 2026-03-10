@@ -1,4 +1,4 @@
-const CACHE_NAME = 's21-pro-v2';
+const CACHE_NAME = 's21-pro-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -9,7 +9,13 @@ const ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
 ];
 
-// Installazione: cacha tutti gli asset incluse le librerie CDN
+// Domini che NON devono mai essere cachati (API/Cloud)
+const NETWORK_ONLY = [
+  'script.google.com',
+  'docs.google.com',
+  'sheets.googleapis.com'
+];
+
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
@@ -17,7 +23,6 @@ self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
 
-// Attivazione: elimina cache vecchie
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
@@ -27,8 +32,16 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
-// Strategia: Cache first, fallback su rete
 self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
+
+  // Le chiamate API vanno SEMPRE alla rete, mai dalla cache
+  if (NETWORK_ONLY.some(domain => url.hostname.includes(domain))) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // Per tutto il resto: Cache first, fallback su rete
   e.respondWith(
     caches.match(e.request).then((cached) => {
       return cached || fetch(e.request).then((response) => {
@@ -37,8 +50,6 @@ self.addEventListener('fetch', (e) => {
           return response;
         });
       });
-    }).catch(() => {
-      return caches.match('./index.html');
-    })
+    }).catch(() => caches.match('./index.html'))
   );
 });
