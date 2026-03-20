@@ -1,4 +1,4 @@
-const CACHE_NAME = 's21-pro-v3';
+const CACHE_NAME = 's21-pro-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,9 @@ const ASSETS = [
   './icona-192.png',
   './icona-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js'
 ];
 
 // Domini che NON devono mai essere cachati (API/Cloud)
