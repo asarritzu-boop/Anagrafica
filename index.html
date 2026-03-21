@@ -3584,9 +3584,14 @@ window.salvaSuCloud = async function() {
     const user = auth.currentUser;
     if (!user) { alert('Devi essere loggato.'); return; }
     const dati = localStorage.getItem('archivio_congregazione') || '[]';
+    const codice = localStorage.getItem('codice_congregazione') || '';
     try {
         const ref = doc(db, 'utenti', user.uid, 'archivio', 'dati');
-        await setDoc(ref, { archivio: dati, aggiornato: new Date().toISOString() });
+        await setDoc(ref, {
+            archivio: dati,
+            codice_congregazione: codice,
+            aggiornato: new Date().toISOString()
+        });
         alert('✅ Backup salvato nel Cloud!');
     } catch(e) {
         alert('Errore salvataggio: ' + e.message);
@@ -3602,6 +3607,9 @@ window.ripristinaCloud = async function() {
         const snap = await getDoc(ref);
         if (!snap.exists() || !snap.data().archivio) { alert('Nessun backup trovato nel Cloud.'); return; }
         localStorage.setItem('archivio_congregazione', snap.data().archivio);
+        if (snap.data().codice_congregazione) {
+            localStorage.setItem('codice_congregazione', snap.data().codice_congregazione);
+        }
         alert('✅ Dati ripristinati dal Cloud!');
         location.reload();
     } catch(e) {
