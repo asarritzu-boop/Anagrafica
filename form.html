@@ -339,12 +339,12 @@
         </div>
         <div class="campo">
             <label>Ore</label>
-            <input type="number" id="ore-val" min="0" max="999" value="0" placeholder="0" inputmode="numeric">
+            <input type="number" id="ore-val" min="0" max="999" placeholder="—" inputmode="numeric">
         </div>
         <div class="campo">
             <label>Studi biblici</label>
-            <input type="number" id="studi" min="0" max="99" value="0" placeholder="0" inputmode="numeric">
-        </div>
+            <input type="number" id="studi" min="0" max="99" placeholder="—" inputmode="numeric">
+        </div>w
     </div>
 
     <div class="sezione-titolo">Note aggiuntive</div>
@@ -469,8 +469,8 @@ window.inviaRapporto = async function() {
 window.inviaAltro = function() {
     document.getElementById('nome').value         = '';
     document.getElementById('cognome').value      = '';
-    document.getElementById('ore-val').value      = '0';
-    document.getElementById('studi').value        = '0';
+    document.getElementById('ore-val').value      = '';
+    document.getElementById('studi').value        = '';
     document.getElementById('osservazioni').value = '';
     setFlag('partecipato', true);
     setFlag('ausiliario', false);
