@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapporto di Servizio</title>
+    <meta name="theme-color" content="#80242a">
+    <style>
+        :root {
+            --maroon: #80242a;
+            --bg: #F2F2F7;
+            --card: #FFFFFF;
+            --gray: #8E8E93;
+            --green: #34C759;
+            --red: #FF3B30;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        /* HEADER */
+        .header {
+            background: var(--maroon);
+            color: white;
+            padding: 20px 20px 16px 20px;
+            text-align: center;
+        }
+        .header img {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+        .header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+        .codice-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        /* SCHERMO ERRORE */
+        #screen-errore {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            padding: 30px 24px;
+            text-align: center;
+        }
+        #screen-errore .icon { font-size: 56px; margin-bottom: 16px; }
+        #screen-errore h2 { font-size: 22px; font-weight: 700; color: #1c1c1e; margin-bottom: 8px; }
+        #screen-errore p { font-size: 15px; color: var(--gray); line-height: 1.5; }
+
+        /* SCHERMO SUCCESSO */
+        #screen-successo {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            padding: 30px 24px;
+            text-align: center;
+        }
+        #screen-successo .icon { font-size: 72px; margin-bottom: 16px; }
+        #screen-successo h2 { font-size: 24px; font-weight: 700; color: #1c1c1e; margin-bottom: 10px; }
+        #screen-successo p { font-size: 16px; color: var(--gray); line-height: 1.5; max-width: 300px; }
+        .btn-altro {
+            margin-top: 28px;
+            padding: 14px 32px;
+            background: var(--maroon);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* FORM */
+        #screen-form {
+            display: none;
+            padding: 20px 16px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .sezione-titolo {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 20px 4px 8px 4px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 14px;
+            overflow: hidden;
+            border: 0.5px solid #C6C6C8;
+        }
+
+        /* Campo con label sopra e input sotto */
+        .campo-block {
+            padding: 12px 16px;
+            border-bottom: 0.5px solid #E5E5EA;
+        }
+        .campo-block:last-child { border-bottom: none; }
+        .campo-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .campo-block input[type="text"] {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 17px;
+            font-weight: 500;
+            color: #1c1c1e;
+            background: transparent;
+            font-family: inherit;
+            padding: 2px 0;
+        }
+        .campo-block input[type="text"]::placeholder { color: #C7C7CC; font-weight: 400; }
+
+        /* Campo orizzontale */
+        .campo {
+            display: flex;
+            align-items: center;
+            padding: 13px 16px;
+            border-bottom: 0.5px solid #E5E5EA;
+            gap: 12px;
+        }
+        .campo:last-child { border-bottom: none; }
+        .campo > label {
+            font-size: 15px;
+            color: #1c1c1e;
+            flex: 1;
+            font-weight: 500;
+        }
+        .campo input[type="number"],
+        .campo select {
+            border: none;
+            outline: none;
+            font-size: 15px;
+            color: #1c1c1e;
+            text-align: right;
+            background: transparent;
+            width: 160px;
+            font-family: inherit;
+        }
+        .campo select {
+            -webkit-appearance: none;
+            appearance: none;
+            color: var(--maroon);
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .campo input::placeholder { color: #C7C7CC; }
+
+        /* Flag Sì/No */
+        .flag-group {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .flag-btn {
+            padding: 6px 18px;
+            border-radius: 20px;
+            border: 1.5px solid #D1D1D6;
+            background: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #8E8E93;
+            transition: all 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .flag-btn.flag-si.active {
+            background: #34C759;
+            border-color: #34C759;
+            color: white;
+        }
+        .flag-btn.flag-no.active {
+            background: #FF3B30;
+            border-color: #FF3B30;
+            color: white;
+        }
+
+        /* Ore con +/- */
+        .ore-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .ore-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: #E5E5EA;
+            font-size: 22px;
+            font-weight: 300;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            color: #3A3A3C;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .ore-btn:active { opacity: 0.6; }
+        #ore-val {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--maroon);
+            min-width: 36px;
+            text-align: center;
+        }
+
+        /* Textarea osservazioni */
+        .campo-obs { padding: 13px 16px; }
+        .campo-obs textarea {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 15px;
+            font-family: inherit;
+            color: #1c1c1e;
+            background: transparent;
+            resize: none;
+            min-height: 60px;
+        }
+        .campo-obs textarea::placeholder { color: #C7C7CC; }
+
+        /* Pulsante invia */
+        .btn-invia {
+            width: 100%;
+            padding: 17px;
+            background: var(--maroon);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 28px;
+            letter-spacing: 0.2px;
+            transition: opacity 0.2s;
+        }
+        .btn-invia:active { opacity: 0.8; }
+        .btn-invia:disabled { background: var(--gray); cursor: not-allowed; }
+
+        /* Loader */
+        #loader-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid #E5E5EA;
+            border-top-color: var(--maroon);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loader-overlay p { font-size: 16px; font-weight: 600; color: #1c1c1e; }
+
+        /* Nota privacy */
+        .nota-privacy {
+            font-size: 12px;
+            color: var(--gray);
+            text-align: center;
+            margin-top: 16px;
+            padding: 0 10px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader-overlay">
+    <div class="spinner"></div>
+    <p>Invio in corso...</p>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+    <img src="icona-512.png" alt="Logo" onerror="this.style.display='none'">
+    <h1>Rapporto di Servizio</h1>
+    <p>Compilazione mensile</p>
+    <div class="codice-badge" id="badge-codice">Caricamento...</div>
+</div>
+
+<!-- SCHERMO: CODICE MANCANTE -->
+<div id="screen-errore">
+    <div class="icon">🔗</div>
+    <h2>Link non valido</h2>
+    <p>Questo link non contiene un codice congregazione.<br>Contatta il tuo segretario per ricevere il link corretto.</p>
+</div>
+
+<!-- SCHERMO: FORM -->
+<div id="screen-form">
+
+    <div class="sezione-titolo">Chi sei</div>
+    <div class="card">
+        <div class="campo-block">
+            <span class="campo-label">Nome</span>
+            <input type="text" id="nome" placeholder="Es. Mario" autocomplete="given-name" inputmode="text">
+        </div>
+        <div class="campo-block">
+            <span class="campo-label">Cognome</span>
+            <input type="text" id="cognome" placeholder="Es. Rossi" autocomplete="family-name" inputmode="text">
+        </div>
+        <div class="campo">
+            <label>Mese del rapporto</label>
+            <select id="mese">
+                <option value="">— Seleziona —</option>
+                <option>Settembre</option>
+                <option>Ottobre</option>
+                <option>Novembre</option>
+                <option>Dicembre</option>
+                <option>Gennaio</option>
+                <option>Febbraio</option>
+                <option>Marzo</option>
+                <option>Aprile</option>
+                <option>Maggio</option>
+                <option>Giugno</option>
+                <option>Luglio</option>
+                <option>Agosto</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="sezione-titolo">Attività</div>
+    <div class="card">
+        <div class="campo">
+            <label>Ho partecipato al ministero</label>
+            <div class="flag-group">
+                <button type="button" class="flag-btn flag-si active" id="partecipato-si" onclick="setFlag('partecipato', true)">Sì</button>
+                <button type="button" class="flag-btn flag-no" id="partecipato-no" onclick="setFlag('partecipato', false)">No</button>
+            </div>
+        </div>
+        <div class="campo">
+            <label>Pioniere ausiliario</label>
+            <div class="flag-group">
+                <button type="button" class="flag-btn flag-si" id="ausiliario-si" onclick="setFlag('ausiliario', true)">Sì</button>
+                <button type="button" class="flag-btn flag-no active" id="ausiliario-no" onclick="setFlag('ausiliario', false)">No</button>
+            </div>
+        </div>
+        <div class="campo">
+            <label>Ore</label>
+            <div class="ore-control">
+                <button class="ore-btn" onclick="cambiaOre(-1)">−</button>
+                <span id="ore-val">0</span>
+                <button class="ore-btn" onclick="cambiaOre(1)">+</button>
+            </div>
+        </div>
+        <div class="campo">
+            <label>Studi biblici</label>
+            <input type="number" id="studi" min="0" max="99" value="0" placeholder="0">
+        </div>
+    </div>
+
+    <div class="sezione-titolo">Note aggiuntive</div>
+    <div class="card">
+        <div class="campo-obs">
+            <span class="campo-label">Osservazioni (opzionale)</span>
+            <textarea id="osservazioni" placeholder="Es. In viaggio per 2 settimane..." rows="3"></textarea>
+        </div>
+    </div>
+
+    <button class="btn-invia" onclick="inviaRapporto()">INVIA RAPPORTO</button>
+    <p class="nota-privacy">I dati vengono inviati in modo sicuro e sono visibili solo al segretario della tua congregazione.</p>
+
+</div>
+
+<!-- SCHERMO: SUCCESSO -->
+<div id="screen-successo">
+    <div class="icon">✅</div>
+    <h2>Rapporto inviato!</h2>
+    <p>Il tuo rapporto di <strong id="riepilogo-mese"></strong> è stato registrato correttamente.<br>Grazie <strong id="riepilogo-nome"></strong>!</p>
+    <button class="btn-altro" onclick="inviaAltro()">Invia un altro rapporto</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyD5lxEESPJxd_4kvG3XIb6uCFIkknpGgH8",
+    authDomain: "castelsardoseg1.firebaseapp.com",
+    projectId: "castelsardoseg1",
+    storageBucket: "castelsardoseg1.firebasestorage.app",
+    messagingSenderId: "1061003337226",
+    appId: "1:1061003337226:web:6647c3c7251cd2c1f509f3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// --- Legge il codice congregazione dall'URL ---
+const params = new URLSearchParams(window.location.search);
+const codice = params.get('cod') ? params.get('cod').trim().toLowerCase() : null;
+
+// --- Mostra lo schermo giusto ---
+if (!codice) {
+    document.getElementById('badge-codice').textContent = 'Codice mancante';
+    document.getElementById('screen-errore').style.display = 'flex';
+} else {
+    document.getElementById('badge-codice').textContent = '📍 ' + codice.toUpperCase();
+    document.getElementById('screen-form').style.display = 'block';
+
+    // Preseleziona il MESE PRECEDENTE rispetto a oggi
+    const mesiJS = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+                    'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+    const oggi = new Date();
+    const idxPrecedente = oggi.getMonth() === 0 ? 11 : oggi.getMonth() - 1;
+    const nomeMesePrecedente = mesiJS[idxPrecedente];
+    const sel = document.getElementById('mese');
+    for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === nomeMesePrecedente) { sel.selectedIndex = i; break; }
+    }
+}
+
+// --- Stato flag Sì/No ---
+const flagStato = { partecipato: true, ausiliario: false };
+
+window.setFlag = function(campo, valore) {
+    flagStato[campo] = valore;
+    document.getElementById(campo + '-si').classList.toggle('active', valore);
+    document.getElementById(campo + '-no').classList.toggle('active', !valore);
+};
+
+// --- Controllo ore con +/- ---
+let oreValore = 0;
+window.cambiaOre = function(delta) {
+    oreValore = Math.max(0, oreValore + delta);
+    document.getElementById('ore-val').textContent = oreValore;
+};
+
+// --- INVIO RAPPORTO ---
+window.inviaRapporto = async function() {
+    const nome         = document.getElementById('nome').value.trim();
+    const cognome      = document.getElementById('cognome').value.trim();
+    const mese         = document.getElementById('mese').value;
+    const studi        = parseInt(document.getElementById('studi').value) || 0;
+    const osservazioni = document.getElementById('osservazioni').value.trim();
+    const partecipato  = flagStato.partecipato;
+    const ausiliario   = flagStato.ausiliario;
+
+    // Validazione
+    if (!nome)    { alert('Inserisci il tuo nome.');              document.getElementById('nome').focus();    return; }
+    if (!cognome) { alert('Inserisci il tuo cognome.');           document.getElementById('cognome').focus(); return; }
+    if (!mese)    { alert('Seleziona il mese del rapporto.');                                                  return; }
+
+    // "COGNOME NOME" maiuscolo — coerente con l'archivio dell'app principale
+    const nomeCompleto = (cognome + ' ' + nome).toUpperCase();
+
+    const loader = document.getElementById('loader-overlay');
+    loader.style.display = 'flex';
+
+    try {
+        const rapporto = {
+            nomeCompleto: nomeCompleto,
+            mese:         mese,
+            partecipato:  partecipato ? 'Sì' : 'No',
+            ausiliario:   ausiliario  ? 'Sì' : 'No',
+            ore:          oreValore,
+            studi:        studi,
+            oss:          osservazioni,
+            timestamp:    new Date().toISOString(),
+            codice:       codice
+        };
+
+        await addDoc(collection(db, 'congregazioni', codice, 'risposte'), rapporto);
+
+        document.getElementById('riepilogo-nome').textContent   = nome + ' ' + cognome;
+        document.getElementById('riepilogo-mese').textContent   = mese;
+        document.getElementById('screen-form').style.display    = 'none';
+        document.getElementById('screen-successo').style.display = 'flex';
+
+    } catch(e) {
+        alert('Errore durante l\'invio: ' + e.message + '\nRiprova tra qualche istante.');
+        console.error(e);
+    } finally {
+        loader.style.display = 'none';
+    }
+};
+
+// --- Reset per inviare un altro rapporto ---
+window.inviaAltro = function() {
+    document.getElementById('nome').value         = '';
+    document.getElementById('cognome').value      = '';
+    document.getElementById('studi').value        = '0';
+    document.getElementById('osservazioni').value = '';
+    setFlag('partecipato', true);
+    setFlag('ausiliario', false);
+    oreValore = 0;
+    document.getElementById('ore-val').textContent  = '0';
+    document.getElementById('screen-successo').style.display = 'none';
+    document.getElementById('screen-form').style.display     = 'block';
+    window.scrollTo(0, 0);
+};
+</script>
+</body>
+</html>
