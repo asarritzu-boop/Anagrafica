@@ -3581,15 +3581,18 @@ window.firebaseEliminaAccount = async function() {
 };
 
 window.salvaSuCloud = async function() {
+window.salvaSuCloud = async function() {
     const user = auth.currentUser;
     if (!user) { alert('Devi essere loggato.'); return; }
     const dati = localStorage.getItem('archivio_congregazione') || '[]';
     const codice = localStorage.getItem('codice_congregazione') || '';
+    const gruppi = localStorage.getItem('gruppi_servizio') || '[]';
     try {
         const ref = doc(db, 'utenti', user.uid, 'archivio', 'dati');
         await setDoc(ref, {
             archivio: dati,
             codice_congregazione: codice,
+            gruppi_servizio: gruppi,
             aggiornato: new Date().toISOString()
         });
         alert('✅ Backup salvato nel Cloud!');
@@ -3598,6 +3601,7 @@ window.salvaSuCloud = async function() {
     }
 };
 
+window.ripristinaCloud = async function() {
 window.ripristinaCloud = async function() {
     const user = auth.currentUser;
     if (!user) { alert('Devi essere loggato.'); return; }
@@ -3609,6 +3613,9 @@ window.ripristinaCloud = async function() {
         localStorage.setItem('archivio_congregazione', snap.data().archivio);
         if (snap.data().codice_congregazione) {
             localStorage.setItem('codice_congregazione', snap.data().codice_congregazione);
+        }
+        if (snap.data().gruppi_servizio) {
+            localStorage.setItem('gruppi_servizio', snap.data().gruppi_servizio);
         }
         alert('✅ Dati ripristinati dal Cloud!');
         location.reload();
