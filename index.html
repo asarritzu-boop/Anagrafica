@@ -3399,7 +3399,30 @@ async function syncCloudAutomatica() {
         const dettaglioNuovi = nomiNuovi.length > 0
             ? '\n\nNuovi proclamatori aggiunti:\n• ' + nomiNuovi.join('\n• ')
             : '';
-        alert('✅ Sincronizzazione completata!\n\nRapporti elaborati: ' + aggiornati + '\nNuovi moduli creati: ' + nuovi + dettaglioNuovi);
+        // --- AUTO-SALVATAGGIO SU CLOUD DOPO SYNC ---
+        try {
+            const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js');
+            const { getFirestore: getFs2, doc: doc2, setDoc: setDoc2 } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
+            const { getApp: getApp2 } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js');
+            const user = getAuth(getApp2()).currentUser;
+            if (user) {
+                const db2 = getFs2(getApp2());
+                const ref2 = doc2(db2, 'utenti', user.uid, 'archivio', 'dati');
+                await setDoc2(ref2, {
+                    archivio: localStorage.getItem('archivio_congregazione') || '[]',
+                    codice_congregazione: localStorage.getItem('codice_congregazione') || '',
+                    gruppi_servizio: localStorage.getItem('gruppi_servizio') || '[]',
+                    statistiche_snapshot: localStorage.getItem('statistiche_snapshot') || '{}',
+                    aggiornato: new Date().toISOString()
+                });
+                alert('✅ Sincronizzazione completata!\n\nRapporti elaborati: ' + aggiornati + '\nNuovi moduli creati: ' + nuovi + dettaglioNuovi + '\n\n☁️ Backup automatico salvato nel Cloud.');
+            } else {
+                alert('✅ Sincronizzazione completata!\n\nRapporti elaborati: ' + aggiornati + '\nNuovi moduli creati: ' + nuovi + dettaglioNuovi + '\n\n⚠️ Backup cloud saltato: nessun utente loggato.');
+            }
+        } catch(eSave) {
+            console.warn('Auto-salvataggio cloud fallito:', eSave);
+            alert('✅ Sincronizzazione completata!\n\nRapporti elaborati: ' + aggiornati + '\nNuovi moduli creati: ' + nuovi + dettaglioNuovi + '\n\n⚠️ Backup automatico non riuscito: ' + eSave.message);
+        }
         location.reload();
 
     } catch(e) {
