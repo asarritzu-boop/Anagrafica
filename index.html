@@ -1669,16 +1669,65 @@ function renderList() {
         const matchTraits = selectedTraits.every(trait => p[trait] === true);
         if (!matchTraits) return false;
 
+        // --- HELPER: controlla se un mese ha attività ---
+        const haDati = (d) => {
+            if (!d) return false;
+            const hasMin = (d.min === true || d.min === 'true');
+            const oreNum = d.ore ? parseInt(d.ore) : 0;
+            return hasMin || oreNum > 0;
+        };
+
+        // --- HELPER: mesi dello storico (anno precedente) per il caso Settembre ---
+        const getMesiStorico = (procl) => {
+            const storico = JSON.parse(localStorage.getItem('storico_congregazione') || '[]');
+            const recordPassato = storico
+                .filter(s => String(s.id) === String(procl.id))
+                .sort((a, b) => (b.id_archivio || 0) - (a.id_archivio || 0))[0];
+            return recordPassato ? (recordPassato.mesi_dati || []) : [];
+        };
+
+        // --- SCHEDA AGGIORNATA? ---
+        // Se anno_servizio !== anno in corso, l'archiviazione non è stata fatta.
+        // I mesi dell'anno in corso sono tutti vuoti per definizione.
         const annoScheda = parseInt(p.anno_servizio || 0);
-        
+        const schedaAggiornata = annoScheda === currentServiceYear;
+        const mesiAttuali = schedaAggiornata ? (p.mesi_dati || []) : [];
+
+        // --- CALCOLO INATTIVITÀ ---
         const getMesiInattivita = (procl) => {
+            if (!schedaAggiornata) {
+                // Scheda non aggiornata: nessun mese attivo nell'anno in corso.
+                // Settembre: potrebbe aver partecipato ad Agosto (storico) quindi
+                // contiamo comunque a ritroso dallo storico per essere precisi.
+                if (currentIdx === 0) {
+                    const mesiStorico = getMesiStorico(procl);
+                    let vuoti = 1; // Settembre corrente già vuoto
+                    for (let j = 11; j >= 0; j--) {
+                        if (haDati(mesiStorico[j])) break;
+                        vuoti++;
+                    }
+                    return vuoti;
+                }
+                return 12; // inattivo certo
+            }
+
+            // Scheda aggiornata: conta a ritroso dal mese corrente
+            if (currentIdx === 0) {
+                // Settembre: controlla prima il mese corrente, poi lo storico
+                if (haDati(mesiAttuali[0])) return 0;
+                const mesiStorico = getMesiStorico(procl);
+                let vuoti = 1;
+                for (let j = 11; j >= 0; j--) {
+                    if (haDati(mesiStorico[j])) break;
+                    vuoti++;
+                }
+                return vuoti;
+            }
+
             let vuoti = 0;
-            let trovato = false;
-            let start = (annoScheda === currentServiceYear) ? currentIdx : 11;
-            for (let j = start; j >= 0; j--) {
-                const d = (procl.mesi_dati && procl.mesi_dati[j]) ? procl.mesi_dati[j] : {};
-                if (d.min || (d.ore && parseInt(d.ore) > 0)) { trovato = true; break; }
-                else vuoti++;
+            for (let j = currentIdx; j >= 0; j--) {
+                if (haDati(mesiAttuali[j])) break;
+                vuoti++;
             }
             return vuoti;
         };
@@ -1686,56 +1735,41 @@ function renderList() {
         const inattiviCount = getMesiInattivita(p);
         const isInattivo = inattiviCount >= 6;
 
+        // --- FILTRO INATTIVI ---
         if (missingVal === "6" || currentView === 'inattivi') {
             if (!isInattivo) return false;
-      
-                      } else if (missingVal === "1" || currentView === 'mancanti') {
+
+        // --- FILTRO RAPPORTO MANCANTE ---
+        } else if (missingVal === "1" || currentView === 'mancanti') {
             if (isInattivo) return false;
-            
-            const prevIdx = currentIdx - 1;
 
-            if (prevIdx >= 0) {
-                // Prendiamo i dati del mese scorso
-                const d = (p.mesi_dati && p.mesi_dati[prevIdx]) ? p.mesi_dati[prevIdx] : {};
-                
-                // Normalizziamo i valori per il controllo
-                const hasMin = (d.min === true || d.min === "true");
-                const oreNum = d.ore ? parseInt(d.ore) : 0;
-
-                // SE ha la spunta OPPURE ha ore > 0, allora NON è mancante (return false)
-                if (hasMin || oreNum > 0) {
-                    return false;
-                }
-                // Altrimenti prosegue e lo mostra nella lista
+            if (currentIdx === 0) {
+                // Settembre: "mese scorso" è Agosto dello storico
+                const mesiStorico = getMesiStorico(p);
+                if (haDati(mesiStorico[11])) return false;
             } else {
-                // SETTEMBRE: controllo Agosto nello storico
-                const storico = JSON.parse(localStorage.getItem('storico_congregazione') || '[]');
-                const recordPassato = storico
-                    .filter(s => String(s.id) === String(p.id))
-                    .sort((a, b) => b.id_archivio - a.id_archivio)[0];
-
-                if (recordPassato && recordPassato.mesi_dati && recordPassato.mesi_dati[11]) {
-                    const dAug = recordPassato.mesi_dati[11];
-                    const hasMinAug = (dAug.min === true || dAug.min === "true");
-                    const oreAug = dAug.ore ? parseInt(dAug.ore) : 0;
-                    if (hasMinAug || oreAug > 0) return false;
-                }
+                // Scheda non aggiornata → mese scorso certamente vuoto → mancante
+                if (!schedaAggiornata) return true;
+                if (haDati(mesiAttuali[currentIdx - 1])) return false;
             }
+
+        // --- FILTRO IRREGOLARI ---
         } else if (missingVal === "3") {
+            if (isInattivo) return false;
 
-if (isInattivo) return false;
-            let irregolare = false;
-            for (let j = 0; j < currentIdx; j++) {
-                const d = (p.mesi_dati && p.mesi_dati[j]) ? p.mesi_dati[j] : {};
-                if (!(d.min || (d.ore && parseInt(d.ore) > 0))) { 
-                    irregolare = true; 
-                    break; 
-                }
+            if (currentIdx === 0) {
+                // Settembre: valutiamo la seconda metà dell'anno precedente nello storico
+                // (Marzo–Agosto, indici 6–11). Se ha almeno un mese vuoto è irregolare.
+                const mesiStorico = getMesiStorico(p);
+                const irregolareStorico = [6,7,8,9,10,11].some(j => !haDati(mesiStorico[j]));
+                if (!irregolareStorico) return false;
+            } else {
+                // Scheda non aggiornata → tutti i mesi vuoti → già inattivo, mai irregolare
+                if (!schedaAggiornata) return false;
+                const irregolare = mesiAttuali.slice(0, currentIdx).some(d => !haDati(d));
+                if (!irregolare) return false;
             }
-            if (!irregolare) return false;
         }
-
-        
 
 
         if (currentView === 'pionieri' && !(p.p_regolare || p.p_speciale)) return false;
