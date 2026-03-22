@@ -432,7 +432,7 @@ window.inviaRapporto = async function() {
     if (!mese)    { alert('Seleziona il mese del rapporto.');                                                  return; }
 
     // "COGNOME NOME" maiuscolo — coerente con l'archivio dell'app principale
-    const nomeCompleto = (cognome + ' ' + nome).toUpperCase();
+    const nomeCompleto = (nome + ' ' + cognome).toUpperCase();
 
     const loader = document.getElementById('loader-overlay');
     loader.style.display = 'flex';
