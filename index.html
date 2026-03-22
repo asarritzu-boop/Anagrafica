@@ -2869,22 +2869,23 @@ document.getElementById('group-members-selection').innerHTML = arch.slice().sort
         const p = (n || '').trim().split(/\s+/);
         return p.length < 2 ? n : p[p.length - 1] + ' ' + p.slice(0, p.length - 1).join(' ');
     };
-    const pt2mm = v => v / 2.835;
+    const PT2MM = 25.4 / 72.0;
 
-    // ── Colori ─────────────────────────────────────────────────────────────────
-    const VIOLA   = [88,  86,  214];
-    const GRAY_BG = [245, 245, 250];
-    const GRAY_TXT= [136, 136, 136];
-    const BORDER  = [221, 221, 221];
-    const WHITE   = [255, 255, 255];
-    const BLACK   = [0,   0,   0  ];
+    // ── Colori (RGB 0-255) ─────────────────────────────────────────────────────
+    const BORDEAUX = [128,  36,  42];
+    const GRAY_BG  = [245, 245, 245];
+    const GRAY_BRD = [187, 187, 187];
+    const WHITE    = [255, 255, 255];
+    const BLACK    = [  0,   0,   0];
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
-    const setFill   = (rgb) => doc.setFillColor(rgb[0], rgb[1], rgb[2]);
-    const setStroke = (rgb) => doc.setDrawColor(rgb[0], rgb[1], rgb[2]);
-    const setColor  = (rgb) => doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+    const setFill   = (rgb) => doc.setFillColor  (rgb[0], rgb[1], rgb[2]);
+    const setStroke = (rgb) => doc.setDrawColor  (rgb[0], rgb[1], rgb[2]);
+    const setColor  = (rgb) => doc.setTextColor  (rgb[0], rgb[1], rgb[2]);
+
+    const PW = 210, PH = 297;
 
     // ── Preparazione dati ──────────────────────────────────────────────────────
     const gruppiOrdinati = [...gruppi].sort((a, b) => a.titolo.localeCompare(b.titolo, 'it'));
@@ -2907,234 +2908,228 @@ document.getElementById('group-members-selection').innerHTML = arch.slice().sort
         return { g, membri };
     });
 
-    // ── Costanti layout (pt) ───────────────────────────────────────────────────
-    const NUM_COLS      = 3;
-    const MFS_MAX = 12.0, MFS_MIN = 8.0;
-    const HFS_MAX = 14.0, HFS_MIN = 8.0;
-    const TFS_MAX = 18.0, TFS_MIN = 12.0;
-    const ROW_H_ABS_MAX = MFS_MAX * 2.2;   // 26.4pt — tetto altezza riga
-    const HH_ABS_MAX    = HFS_MAX * 2.6;   // 36.4pt — tetto altezza intestazione
-    const COL_W_MIN     = 150.0;           // larghezza minima colonna (~53mm)
-    const M_MAX         = 71.0;            // margine massimo (~25mm)
-    const PW_PT         = 595.28;
-    const PH_PT         = 841.89;
-    const PW_MM         = 210;
+    const n = gruppiConMembri.length;
 
-    // ── Griglia ────────────────────────────────────────────────────────────────
-    const n     = gruppiConMembri.length;
-    const nRows = Math.ceil(n / NUM_COLS);
+    // ── Helper: misura larghezza testo riga in mm ──────────────────────────────
+    const misuraRiga = (membro, idx, fs) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(fs * 0.85);
+        const numW = doc.getTextWidth(String(idx + 1));
 
-    const rowCounts = Array.from({ length: nRows }, (_, i) =>
-        Math.floor(n / nRows) + (i < n % nRows ? 1 : 0)
-    );
-    const layout = [];
-    rowCounts.forEach((cnt, r) => {
-        for (let col = 0; col < cnt; col++) layout.push({ r, col, cnt });
-    });
+        const sigle = [];
+        if (membro.anziano)      sigle.push('Az');
+        if (membro.servitore)    sigle.push('SM');
+        if (membro.p_regolare)   sigle.push('PR');
+        if (membro.p_speciale)   sigle.push('PS');
+        if (membro.p_ausiliario) sigle.push('PA');
+        const suffisso = sigle.length ? ' (' + sigle.join(', ') + ')' : '';
 
-    const rowMax = {};
-    for (let r = 0; r < nRows; r++) rowMax[r] = 0;
-    gruppiConMembri.forEach(({ membri }, gi) => {
-        rowMax[layout[gi].r] = Math.max(rowMax[layout[gi].r], membri.length);
-    });
-    const maxG = Math.max(...gruppiConMembri.map(({ membri }) => membri.length));
+        doc.setFont('helvetica', membro._bold ? 'bold' : 'normal');
+        doc.setFontSize(fs);
+        const nomeW = doc.getTextWidth(inverti(membro.nome_cognome));
 
-    // ── Font scalati su maxG (interpolazione lineare 3→20) ────────────────────
-    const t   = Math.max(0, Math.min(1, (maxG - 3) / (20 - 3)));
-    const mFS = MFS_MAX - t * (MFS_MAX - MFS_MIN);
-    const hFS = HFS_MAX - t * (HFS_MAX - HFS_MIN);
-    const tFS = TFS_MAX - t * (TFS_MAX - TFS_MIN);
-
-    const TITLE_H_ideal = tFS * 2.0;
-    const hH_ideal      = hFS * 2.6;
-    const rowH_ideal    = Math.min(ROW_H_ABS_MAX, mFS * 2.2);
-
-    // ── Test modo ─────────────────────────────────────────────────────────────
-    const totalTest = 2 * 5.0 + TITLE_H_ideal
-                    + nRows * (hH_ideal + maxG * rowH_ideal + 4.0);
-
-    let mFS_use, hFS_use, tFS_use, TITLE_H, hH_PT, rowH_PT, M, G;
-    let nRighePerR = {}, slotH = {};
-
-    // ── Calcolo layout: logica comune ai due modi ──────────────────────────────
-    //
-    // Principio: G (gap) è fissato dall'orizzontale con colW = COL_W_MIN.
-    //            hH riceve una quota proporzionale dello spazio verticale libero.
-    //            M (margine, uguale top/bottom/left/right) riceve il resto.
-    //            Se M supera M_MAX, l'eccesso va a G (gap cresce, colW scende
-    //            leggermente ma rimane accettabile).
-    //
-    // G_base = (PW - NC * COL_W_MIN) / (NC + 1)   ← garantisce colW = COL_W_MIN se M = G
-    // free_v = PH - TITLE_H - sum(rowMax[r]*rowH) - nRows*G_base
-    // hH     = min(HH_ABS_MAX, free_v / (nRows + 2))
-    // M_raw  = (free_v - nRows*hH) / 2
-    // M      = min(M_MAX, M_raw)
-    // eccesso = M_raw - M  → se > 0, va a G: G += eccesso*2/nRows
-    // colW   = (PW - 2*M - (NC-1)*G) / NC
-
-    const computeLayout = (TITLE_H_v, rowH_v, hH_base, nRigheFn) => {
-        const G_base   = (PW_PT - NUM_COLS * COL_W_MIN) / (NUM_COLS + 1);
-        const sumRows  = Array.from({length: nRows}, (_, r) => nRighePerR[r] * rowH_v)
-                              .reduce((a, b) => a + b, 0);
-        const free_v   = PH_PT - TITLE_H_v - sumRows - nRows * G_base;
-        const hH_raw   = free_v / (nRows + 2);
-        const hH_v     = Math.min(HH_ABS_MAX, Math.max(hH_base, hH_raw));
-        const M_raw    = (free_v - nRows * hH_v) / 2;
-        const M_v      = Math.min(M_MAX, M_raw);
-        let   G_v      = G_base;
-        if (M_raw > M_MAX) G_v += ((M_raw - M_MAX) * 2) / nRows;
-        return { M: M_v, G: G_v, hH: hH_v };
+        let sufW = 0;
+        if (suffisso) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(fs * 0.82);
+            sufW = doc.getTextWidth(suffisso);
+        }
+        return numW + nomeW + sufW;
     };
 
-    if (totalTest <= PH_PT) {
-        // ══════════════════════════════════════════════════════════════════════
-        // MODO GLOBALE — font non al minimo.
-        // Tutte le tabelle: nRighe = maxG.
-        // ══════════════════════════════════════════════════════════════════════
-        mFS_use = mFS; hFS_use = hFS; tFS_use = tFS;
-        TITLE_H = TITLE_H_ideal;
-        rowH_PT = rowH_ideal;
+    // Marca ogni membro con flag bold (sorvegliante o assistente)
+    gruppiConMembri.forEach(({ g, membri }) => {
+        membri.forEach(m => {
+            m._bold = String(m.id) === String(g.sorveglianteId) ||
+                      String(m.id) === String(g.assistenteId);
+        });
+    });
 
-        for (let r = 0; r < nRows; r++) nRighePerR[r] = maxG;
+    // ── FASE 1: scegli memberFS e NUM_COLS ────────────────────────────────────
+    // Doppio vincolo: (A) colW >= max_text_w + PAD_MM  (B) rowH >= 3.8mm
+    // Prova fs decrescente × cols decrescente, prima soluzione valida vince.
+    const PAD_MM    = 3.5;
+    const ROW_H_MIN = 3.8;
+    const M_MAX_MM  = 20, M_MIN_MM = 5, G_MM = 6;
 
-        const res = computeLayout(TITLE_H, rowH_PT, hH_ideal, r => maxG);
-        M = res.M; G = res.G; hH_PT = res.hH;
+    const layoutRows = (total, cols) => {
+        const rows = Math.ceil(total / cols);
+        const base = Math.floor(total / rows), extra = total % rows;
+        return Array.from({ length: rows }, (_, r) => base + (r < extra ? 1 : 0));
+    };
 
-        for (let r = 0; r < nRows; r++) slotH[r] = hH_PT + maxG * rowH_PT + G;
+    let memberFS = null, NUM_COLS = null, rowDist = null, rowMaxMap = null, colNeeded = null;
 
-    } else {
-        // ══════════════════════════════════════════════════════════════════════
-        // MODO STRESS — font al minimo, righe per-riga.
-        // ══════════════════════════════════════════════════════════════════════
-        mFS_use = MFS_MIN; hFS_use = HFS_MIN; tFS_use = TFS_MIN;
-        TITLE_H = TFS_MIN * 2.0;
-        const hH_base = HFS_MIN * 2.6;
+    outer:
+    for (const fs of [9.0, 8.5, 8.0, 7.5, 7.0, 6.5, 6.0, 5.5]) {
+        let maxTextW = 0;
+        gruppiConMembri.forEach(({ membri }) => {
+            membri.forEach((m, idx) => {
+                maxTextW = Math.max(maxTextW, misuraRiga(m, idx, fs));
+            });
+        });
+        const colMin = maxTextW + PAD_MM;
 
-        for (let r = 0; r < nRows; r++) nRighePerR[r] = rowMax[r];
+        for (let cols = Math.min(5, n); cols >= 1; cols--) {
+            const nRows = Math.ceil(n / cols);
+            if (nRows > 5) continue;
+            const colWTry = (PW - 2 * M_MAX_MM - (cols - 1) * G_MM) / cols;
+            if (colWTry < colMin) continue;
 
-        // rowH analitico (con margini minimi), cappato
-        const sumMaxes      = Object.values(rowMax).reduce((a, b) => a + b, 0);
-        const G_base        = (PW_PT - NUM_COLS * COL_W_MIN) / (NUM_COLS + 1);
-        const rowH_analytic = (PH_PT - 2*5.0 - TITLE_H - nRows*(hH_base + G_base)) / sumMaxes;
-        rowH_PT = Math.min(ROW_H_ABS_MAX, Math.max(1.0, rowH_analytic));
+            // rowH in modo stress (rowMax per riga di blocchi)
+            const dist = layoutRows(n, cols);
+            const layoutTmp = [];
+            dist.forEach((cnt, r) => { for (let c = 0; c < cnt; c++) layoutTmp.push({ r, c, cnt }); });
+            const rm = {};
+            for (let r = 0; r < nRows; r++) rm[r] = 0;
+            gruppiConMembri.forEach(({ membri }, gi) => {
+                rm[layoutTmp[gi].r] = Math.max(rm[layoutTmp[gi].r], membri.length);
+            });
+            const totalRighe = Object.values(rm).reduce((a, b) => a + b, 0);
+            const rowHTry = (PH - 2 * M_MAX_MM - (nRows - 1) * G_MM) / (totalRighe + nRows * 1.8);
 
-        const res = computeLayout(TITLE_H, rowH_PT, hH_base, r => rowMax[r]);
-        M = res.M; G = res.G; hH_PT = res.hH;
-
-        for (let r = 0; r < nRows; r++) slotH[r] = hH_PT + rowMax[r] * rowH_PT + G;
+            if (rowHTry >= ROW_H_MIN) {
+                memberFS = fs; NUM_COLS = cols; rowDist = dist;
+                rowMaxMap = rm; colNeeded = colMin;
+                break outer;
+            }
+        }
     }
 
-    // ── Dimensioni finali in mm ────────────────────────────────────────────────
-    const M_mm       = pt2mm(M);
-    const G_mm       = pt2mm(G);
-    const colW_mm    = pt2mm((PW_PT - 2*M - (NUM_COLS-1)*G) / NUM_COLS);
-    const hH_mm      = pt2mm(hH_PT);
-    const rowH_mm    = pt2mm(rowH_PT);
-    const TITLE_H_mm = pt2mm(TITLE_H);
+    // Fallback: 1 colonna, font minimo
+    if (memberFS === null) {
+        memberFS = 5.5; NUM_COLS = 1;
+        rowDist = [n];
+        rowMaxMap = { 0: Math.max(...gruppiConMembri.map(({ membri }) => membri.length)) };
+        colNeeded = PW - 2 * M_MIN_MM;
+    }
 
-    // Origini Y per ogni riga di blocchi
+    const nRows = rowDist.length;
+    const layout = [];
+    rowDist.forEach((cnt, r) => { for (let col = 0; col < cnt; col++) layout.push({ r, col, cnt }); });
+
+    // ── FASE 2: calcola M e G definitivi ─────────────────────────────────────
+    // Modo stress: rowH uniforme, blockH varia per riga (rowMax[r] righe ciascuna).
+    const computeStress = (M_v, G_v) => {
+        const colW_v = (PW - 2 * M_v - (NUM_COLS - 1) * G_v) / NUM_COLS;
+        const totalR = Object.values(rowMaxMap).reduce((a, b) => a + b, 0);
+        const rowH_v = (PH - 2 * M_v - (nRows - 1) * G_v) / (totalR + nRows * 1.8);
+        const hdrH_v = rowH_v * 1.8;
+        return { colW: colW_v, rowH: rowH_v, headerH: hdrH_v };
+    };
+
+    let G = G_MM, M = M_MAX_MM;
+    let { colW, rowH, headerH } = computeStress(M, G);
+
+    while (rowH < 3.8 && M > M_MIN_MM + 0.4) { M -= 0.5; ({ colW, rowH, headerH } = computeStress(M, G)); }
+    while (rowH < 3.0 && G > 3)               { G -= 0.5; ({ colW, rowH, headerH } = computeStress(M, G)); }
+    while (colW < colNeeded * 0.99 && M > M_MIN_MM + 0.4) { M -= 0.5; ({ colW, rowH, headerH } = computeStress(M, G)); }
+    while (colW < colNeeded * 0.99 && G > 3)              { G -= 0.5; ({ colW, rowH, headerH } = computeStress(M, G)); }
+
+    const blockHperR = {};
+    for (let r = 0; r < nRows; r++) blockHperR[r] = headerH + rowMaxMap[r] * rowH;
+
+    const padX     = Math.max(0.8, colW * 0.025);
+    const headerFS = Math.max(6, Math.min(12, headerH * 1.10));
+    const titleFS  = Math.max(7, Math.min(22, M * 1.35));
+
+    // ── Origini Y (dall'alto, in mm) per ogni riga di blocchi ─────────────────
     const yOrigins = [];
-    let yCur = M_mm + TITLE_H_mm;
+    let yCur = M;
     for (let r = 0; r < nRows; r++) {
-        yOrigins[r] = yCur;
-        yCur += pt2mm(slotH[r]);
+        yOrigins.push(yCur);
+        yCur += blockHperR[r] + G;
     }
 
-    // ── Titolo ────────────────────────────────────────────────────────────────
+    // ── Titolo centrato verticalmente nel margine superiore M ─────────────────
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(tFS_use);
-    setColor(VIOLA);
-    doc.text('GRUPPI DI SERVIZIO', PW_MM / 2, M_mm + pt2mm(tFS_use) * 0.85, { align: 'center' });
+    doc.setFontSize(titleFS);
+    setColor(BORDEAUX);
+    doc.text('GRUPPI DI SERVIZIO', PW / 2, M / 2 + titleFS * PT2MM * 0.35, { align: 'center' });
 
-    // ── Disegna gruppi ─────────────────────────────────────────────────────────
+    // ── Disegna ogni gruppo ────────────────────────────────────────────────────
     gruppiConMembri.forEach(({ g, membri }, gi) => {
         const { r, col, cnt } = layout[gi];
-
-        // X con margine M, centra se riga incompleta
-        let xMm;
-        if (cnt < NUM_COLS) {
-            const totalW = cnt * colW_mm + (cnt - 1) * G_mm;
-            xMm = (PW_MM - totalW) / 2 + col * (colW_mm + G_mm);
-        } else {
-            xMm = M_mm + col * (colW_mm + G_mm);
-        }
-
+        const nRighe = rowMaxMap[r];
+        const blkH   = blockHperR[r];
         const yTop   = yOrigins[r];
-        const nRighe = nRighePerR[r];
 
-        // Intestazione: sfondo bianco, 3 lati viola (senza top)
-        setFill(WHITE);
-        doc.rect(xMm, yTop, colW_mm, hH_mm, 'F');
-        setStroke(VIOLA);
-        doc.setLineWidth(0.32);
-        doc.line(xMm,           yTop,          xMm,           yTop + hH_mm);
-        doc.line(xMm + colW_mm, yTop,          xMm + colW_mm, yTop + hH_mm);
-        doc.line(xMm,           yTop + hH_mm,  xMm + colW_mm, yTop + hH_mm);
+        // X: centra la riga se incompleta
+        const rowW   = cnt * colW + (cnt - 1) * G;
+        const xStart = (PW - rowW) / 2;
+        const xMm    = xStart + col * (colW + G);
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(hFS_use);
-        setColor(VIOLA);
-        doc.text(g.titolo, xMm + colW_mm / 2, yTop + hH_mm * 0.65, { align: 'center' });
-
-        // Righe con padding
-        let yRow = yTop + hH_mm;
+        // ── Zebra sfondo righe ────────────────────────────────────────────
         for (let idx = 0; idx < nRighe; idx++) {
-            const membro = idx < membri.length ? membri[idx] : null;
-
-            if (idx % 2 === 0) {
-                setFill(GRAY_BG);
-                doc.rect(xMm, yRow, colW_mm, rowH_mm, 'F');
-            }
-
-            if (membro !== null) {
-                const isSorv   = String(membro.id) === String(g.sorveglianteId);
-                const isAssist = String(membro.id) === String(g.assistenteId);
-                const textY    = yRow + rowH_mm * 0.68;
-
-                const numero = String(idx + 1);
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(mFS_use - 0.5);
-                setColor(GRAY_TXT);
-                doc.text(numero, xMm + pt2mm(2), textY);
-                const numW = doc.getTextWidth(numero) + pt2mm(2);
-
-                const sigle = [];
-                if (membro.anziano)      sigle.push('Az');
-                if (membro.servitore)    sigle.push('SM');
-                if (membro.p_regolare)   sigle.push('PR');
-                if (membro.p_speciale)   sigle.push('PS');
-                if (membro.p_ausiliario) sigle.push('PA');
-                const suffisso = sigle.length ? ' (' + sigle.join(', ') + ')' : '';
-
-                const nomeStr = inverti(membro.nome_cognome);
-                doc.setFont('helvetica', (isSorv || isAssist) ? 'bold' : 'normal');
-                doc.setFontSize(mFS_use);
-                setColor(BLACK);
-                doc.text(nomeStr, xMm + pt2mm(2) + numW, textY);
-
-                if (suffisso) {
-                    const nomeW = doc.getTextWidth(nomeStr);
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(mFS_use);
-                    setColor(GRAY_TXT);
-                    doc.text(suffisso, xMm + pt2mm(2) + numW + nomeW, textY);
-                }
-            }
-
-            setStroke(BORDER);
-            doc.setLineWidth(0.07);
-            doc.rect(xMm, yRow, colW_mm, rowH_mm, 'S');
-            yRow += rowH_mm;
+            setFill(idx % 2 === 0 ? GRAY_BG : WHITE);
+            doc.rect(xMm, yTop + headerH + idx * rowH, colW, rowH, 'F');
         }
 
-        // Bordo esterno blocco
-        setStroke(VIOLA);
-        doc.setLineWidth(0.32);
-        doc.rect(xMm, yTop, colW_mm, hH_mm + nRighe * rowH_mm, 'S');
+        // ── Intestazione bordeaux, testo bianco ───────────────────────────
+        setFill(BORDEAUX);
+        doc.rect(xMm, yTop, colW, headerH, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(headerFS);
+        setColor(WHITE);
+        doc.text(g.titolo, xMm + colW / 2, yTop + headerH * 0.5 + headerFS * PT2MM * 0.35, { align: 'center' });
+
+        // ── Testo membri ──────────────────────────────────────────────────
+        membri.forEach((membro, idx) => {
+            const isSorv   = String(membro.id) === String(g.sorveglianteId);
+            const isAssist = String(membro.id) === String(g.assistenteId);
+            const yRow     = yTop + headerH + idx * rowH;
+            const textY    = yRow + rowH * 0.5 + memberFS * PT2MM * 0.35;
+
+            // Numero: bordeaux grassetto
+            const numStr = String(idx + 1);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(memberFS * 0.85);
+            setColor(BORDEAUX);
+            doc.text(numStr, xMm + padX, textY);
+            const numW = doc.getTextWidth(numStr);
+
+            // Sigle incarico
+            const sigle = [];
+            if (membro.anziano)      sigle.push('Anz');
+            if (membro.servitore)    sigle.push('SM');
+            if (membro.p_regolare)   sigle.push('PR');
+            if (membro.p_speciale)   sigle.push('PS');
+            const suffisso = sigle.length ? ' (' + sigle.join(', ') + ')' : '';
+
+            // Nome: nero (grassetto se sorvegliante/assistente)
+            const nomeStr = inverti(membro.nome_cognome);
+            doc.setFont('helvetica', (isSorv || isAssist) ? 'bold' : 'normal');
+            doc.setFontSize(memberFS);
+            setColor(BLACK);
+            const nomeX = xMm + padX + numW + padX * 0.6;
+            doc.text(nomeStr, nomeX, textY);
+
+            // Sigle: bordeaux grassetto
+            if (suffisso) {
+                const nomeW = doc.getTextWidth(nomeStr);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(memberFS * 0.82);
+                setColor(BORDEAUX);
+                doc.text(suffisso, nomeX + nomeW, textY);
+            }
+        });
+
+        // ── Griglia: linee orizzontali grigie tra righe ───────────────────
+        setStroke(GRAY_BRD);
+        doc.setLineWidth(0.15);
+        for (let idx = 1; idx < nRighe; idx++) {
+            const yLine = yTop + headerH + idx * rowH;
+            doc.line(xMm, yLine, xMm + colW, yLine);
+        }
+
+        // ── Bordo esterno blocco grigio ───────────────────────────────────
+        setStroke(GRAY_BRD);
+        doc.setLineWidth(0.5);
+        doc.rect(xMm, yTop, colW, blkH, 'S');
     });
 
     doc.save('Gruppi_di_Servizio.pdf');
-}
+                }
 
         function shareMancantiMenu() {
             let arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
