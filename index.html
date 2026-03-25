@@ -3523,7 +3523,7 @@ function condividiLinkModulo() {
         navigator.share({
             title: 'Rapporto di Servizio',
             text: messaggio,
-            url: linkForm,
+            
         }).catch((error) => console.log('Errore condivisione:', error));
     } else {
         const whatsappUrl = 'https://wa.me/?text=' + encodeURIComponent(messaggio);
