@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+a<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -5057,10 +5057,15 @@ try { onAuthStateChanged(auth, (user) => {
     const homeScreen = document.getElementById('home-screen');
     if (user) {
         loginScreen.style.display = 'none';
-        if (!authReady) {
-            homeScreen.style.display = 'flex';
-            authReady = true;
-        }
+if (!authReady) {
+    homeScreen.style.display = 'flex';
+    authReady = true;
+    if (!sessionStorage.getItem('cloud_ripristinato')) {
+        sessionStorage.setItem('cloud_ripristinato', '1');
+        window.ripristinaCloud();
+    }
+}
+        
     } else {
         authReady = false;
         loginScreen.style.display = 'flex';
