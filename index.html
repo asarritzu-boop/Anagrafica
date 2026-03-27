@@ -5057,21 +5057,18 @@ try { onAuthStateChanged(auth, (user) => {
     const homeScreen = document.getElementById('home-screen');
     if (user) {
         loginScreen.style.display = 'none';
-        if (!authReady) {
-            homeScreen.style.display = 'flex';
-            authReady = true;
-              // --- FIX LOOP: Controlla se abbiamo già sincronizzato in questa sessione ---
-            if (!sessionStorage.getItem('cloudSyncDone')) {
-                sessionStorage.setItem('cloudSyncDone', 'true'); 
-                window.ripristinaCloud(); 
+         // CONTROLLO ANTI-LOOP
+            if (!sessionStorage.getItem('autoSyncDone')) {
+                sessionStorage.setItem('autoSyncDone', 'true');
+                window.ripristinaCloud();
             }
         }
     } else {
         authReady = false;
-        sessionStorage.removeItem('cloudSyncDone'); // Reset quando si esce
+        sessionStorage.removeItem('autoSyncDone'); // Reset al logout
         loginScreen.style.display = 'flex';
         homeScreen.style.display = 'none';
-    }
+}
 }); } catch(firebaseErr) {
     console.error('Firebase error:', firebaseErr);
     document.getElementById('login-screen').style.display = 'none';
