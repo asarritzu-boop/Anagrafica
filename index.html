@@ -5060,10 +5060,15 @@ try { onAuthStateChanged(auth, (user) => {
         if (!authReady) {
             homeScreen.style.display = 'flex';
             authReady = true;
-            window.ripristinaCloud();
+              // --- FIX LOOP: Controlla se abbiamo già sincronizzato in questa sessione ---
+            if (!sessionStorage.getItem('cloudSyncDone')) {
+                sessionStorage.setItem('cloudSyncDone', 'true'); 
+                window.ripristinaCloud(); 
+            }
         }
     } else {
         authReady = false;
+        sessionStorage.removeItem('cloudSyncDone'); // Reset quando si esce
         loginScreen.style.display = 'flex';
         homeScreen.style.display = 'none';
     }
