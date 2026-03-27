@@ -5067,7 +5067,6 @@ try { onAuthStateChanged(auth, (user) => {
         homeScreen.style.display = 'none';
     }
 }); } catch(firebaseErr) {
-
     console.error('Firebase error:', firebaseErr);
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('home-screen').style.display = 'flex';
