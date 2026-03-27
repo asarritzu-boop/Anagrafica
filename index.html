@@ -5060,6 +5060,7 @@ try { onAuthStateChanged(auth, (user) => {
         if (!authReady) {
             homeScreen.style.display = 'flex';
             authReady = true;
+            window.ripristinaCloud();
         }
     } else {
         authReady = false;
