@@ -5127,13 +5127,12 @@ window.inviaAGemini = async function() {
       storico: JSON.parse(localStorage.getItem('storico_congregazione') || '[]')
     };
 
-    // Ora puntiamo alla tua API interna su Vercel
+      // Ora puntiamo all'indirizzo reale del tuo server su Vercel
     const res = await fetch('https://claude-proxy-one.vercel.app/api/chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ domanda, dati })
     });
-
     const json = await res.json();
     
     // Il tuo file chat.js universale restituisce già il campo "risposta"
