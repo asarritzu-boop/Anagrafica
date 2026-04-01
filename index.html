@@ -484,6 +484,22 @@
   align-items: center;
   justify-content: center;
 }
+        @media (min-width: 600px) and (max-width: 899px) {
+    .stat-inner {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    .stat-tabella {
+        flex: 2;
+    }
+    .stat-variazioni {
+        flex: 1;
+        min-width: 100px;
+        margin-top: 0 !important;
+    }
+        }
         @media (min-width: 900px) {
     #stat-colonne {
         flex-direction: row !important;
