@@ -5079,7 +5079,26 @@ window.togglePassword = function(inputId, btn) {
     if (input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
     else { input.type = 'password'; btn.textContent = '👁'; }
 };
-
+    
+async function ripristinaCloudSilenzioso() {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+        const ref = doc(db, 'utenti', user.uid, 'archivio', 'dati');
+        const snap = await getDoc(ref);
+        if (!snap.exists() || !snap.data().archivio) return;
+        localStorage.setItem('archivio_congregazione', snap.data().archivio);
+        if (snap.data().codice_congregazione)
+            localStorage.setItem('codice_congregazione', snap.data().codice_congregazione);
+        if (snap.data().gruppi_servizio)
+            localStorage.setItem('gruppi_servizio', snap.data().gruppi_servizio);
+        if (snap.data().statistiche_snapshot)
+            localStorage.setItem('statistiche_snapshot', snap.data().statistiche_snapshot);
+        location.reload();
+    } catch(e) {
+        console.error('Errore ripristino automatico:', e.message);
+    }
+}
 // --- Gestione stato login: mostra home o login ---
 let authReady = false;
 try { onAuthStateChanged(auth, (user) => {
@@ -5092,7 +5111,7 @@ if (!authReady) {
     authReady = true;
     if (!sessionStorage.getItem('cloud_ripristinato')) {
         sessionStorage.setItem('cloud_ripristinato', '1');
-        window.ripristinaCloud();
+        ripristinaCloudSilenzioso();
     }
 }
         
@@ -5107,7 +5126,7 @@ if (!authReady) {
     document.getElementById('home-screen').style.display = 'flex';
 }
 
- </script>
+ </scrip>
 
 <script>
 window.inviaAGemini = async function() {
