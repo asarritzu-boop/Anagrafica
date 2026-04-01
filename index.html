@@ -520,9 +520,9 @@
         <div id="progress-text">Attendere...</div>
     </div>
     
-    <button id="claude-fab" onclick="toggleClaude()" title="Chiedi alla divde">🤖</button>
+    <button id="claude-fab" onclick="toggleClaude()" title="Chiedi all'assistente virtuale">🤖</button>
 <div id="claude-panel" style="position:fixed;bottom:90px;right:24px;width:300px;background:white;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:999998;display:none;flex-direction:column;overflow:hidden;">
-  <div style="background:#80242a;color:white;padding:12px 16px;font-weight:bold;">🤖 Chiedi alla I.A.</div>
+  <div style="background:#80242a;color:white;padding:12px 16px;font-weight:bold;">🤖 Chiedi all'assistente virtuale</div>
   <div id="cr" style="padding:12px;font-size:13px;color:#333;min-height:60px;max-height:200px;overflow-y:auto;white-space:pre-wrap;">Ciao! Chiedimi qualcosa...</div>
   <div style="display:flex;padding:8px;gap:6px;border-top:1px solid #eee;">
     <input id="ci" type="text" placeholder="Scrivi qui..." style="flex:1;border:1px solid #ccc;border-radius:8px;padding:8px;font-size:13px;"/>
@@ -5150,7 +5150,11 @@ window.inviaAGemini = async function() {
     const res = await fetch('https://claude-proxy-one.vercel.app/api/chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ domanda, dati })
+      body: JSON.stringify({
+  domanda,
+  dati,
+  systemPrompt: `Sei un assistente integrato nell'app "Anagrafica Congregazione S-21", un'applicazione PWA per la gestione dell'anagrafica dei pubblicatori di una congregazione dei Testimoni di Geova. I dati che ricevi contengono: "archivio" (elenco dei pubblicatori con i loro dati personali, privilegi, ore di servizio, note), "gruppi" (gruppi di servizio con i relativi membri), "storico" (storico attività della congregazione). Rispondi SOLO in base a questi dati. Non inventare informazioni non presenti. Se la domanda non riguarda l'anagrafica o la gestione della congregazione, rispondi che sei specializzato solo in questo ambito.`
+})
     });
     const json = await res.json();
     
