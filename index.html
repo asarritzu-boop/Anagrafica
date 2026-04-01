@@ -484,6 +484,17 @@
   align-items: center;
   justify-content: center;
 }
+        @media (min-width: 900px) {
+    #stat-colonne {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+    .stat-col {
+        flex: 1 1 calc(50% - 12px);
+        min-width: 300px;
+    }
+        }
 </style>
 
 
