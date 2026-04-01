@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+a<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -494,22 +494,24 @@
         flex: 1 1 calc(50% - 12px) !important;
         width: calc(50% - 12px) !important;
         min-width: 300px;
-        display: flex !important;
-        flex-direction: row !important;
-        gap: 12px;
+    }
+    .stat-inner {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
         align-items: flex-start;
     }
-    .stat-col > div:first-child {
+    .stat-tabella {
         flex: 2;
     }
-    .stat-col > div:last-child {
+    .stat-variazioni {
         flex: 1;
-        min-width: 140px;
+        min-width: 120px;
+        margin-top: 0 !important;
     }
-        }
+                    }
+        
 </style>
-
-
 </head>
 <body>
     
@@ -978,52 +980,60 @@
      <div id="stat-colonne" style="display:flex; flex-direction:column; gap:24px; padding:16px; align-items:stretch;">
     
     <div class="stat-col" id="stat-col-proclamatori" style="width:100%;">
-        <div style="background:#80242a; color:white; text-align:center; padding:10px; border-radius:10px 10px 0 0; font-weight:700; font-size:14px; letter-spacing:0.5px;">PROCLAMATORI</div>
-        <div style="background:#f9f9f9; border:1px solid #ddd; border-top:none; border-radius:0 0 10px 10px; padding:10px;">
+    <div style="background:#80242a; color:white; text-align:center; padding:10px; border-radius:10px 10px 0 0; font-weight:700; font-size:14px; letter-spacing:0.5px;">PROCLAMATORI</div>
+    <div class="stat-inner">
+        <div class="stat-tabella" style="background:#f9f9f9; border:1px solid #ddd; border-top:none; border-radius:0 0 10px 10px; padding:10px;">
             <table id="tbl-proclamatori" style="width:100%; border-collapse:collapse; font-size:13px;"></table>
             <div style="margin-top:10px; padding:8px; background:#fff3f3; border-radius:8px; border:1px solid #f0c0c0;">
                 <div id="stat-proc-totali" style="font-size:12px;"></div>
             </div>
-            <div id="stat-proc-variazioni" style="margin-top:8px; font-size:12px; color:#555; padding:8px; background:#f8f8f8; border-radius:8px;"></div>
         </div>
-        <button onclick="stampaSezionePDF('proclamatori')" style="width:100%; margin-top:8px; background:#80242a; color:white; border:none; border-radius:8px; padding:10px; font-size:12px; font-weight:700; cursor:pointer;" class="no-print">🖨 Stampa PDF sezione</button>
+        <div id="stat-proc-variazioni" class="stat-variazioni" style="font-size:12px; color:#555; padding:8px; background:#f8f8f8; border-radius:8px;"></div>
+    </div>
+    <button onclick="stampaSezionePDF('proclamatori')" style="width:100%; margin-top:8px; background:#80242a; color:white; border:none; border-radius:8px; padding:10px; font-size:12px; font-weight:700; cursor:pointer;" class="no-print">🖨 Stampa PDF sezione</button>
     </div>
 
     <div class="stat-col" id="stat-col-ausiliari" style="width:100%;">
-        <div style="background:#d39e00; color:white; text-align:center; padding:10px; border-radius:10px 10px 0 0; font-weight:700; font-size:14px; letter-spacing:0.5px;">PIONIERI AUSILIARI</div>
-        <div style="background:#f9f9f9; border:1px solid #ddd; border-top:none; border-radius:0 0 10px 10px; padding:10px;">
+    <div style="background:#d39e00; color:white; text-align:center; padding:10px; border-radius:10px 10px 0 0; font-weight:700; font-size:14px; letter-spacing:0.5px;">PIONIERI AUSILIARI</div>
+    <div class="stat-inner">
+        <div class="stat-tabella" style="background:#f9f9f9; border:1px solid #ddd; border-top:none; border-radius:0 0 10px 10px; padding:10px;">
             <table id="tbl-ausiliari" style="width:100%; border-collapse:collapse; font-size:13px;"></table>
             <div style="margin-top:10px; padding:8px; background:#fffbe6; border-radius:8px; border:1px solid #f0e0a0;">
                 <div id="stat-aus-totali" style="font-size:12px;"></div>
             </div>
-            <div id="stat-aus-variazioni" style="margin-top:8px; font-size:12px; color:#555; padding:8px; background:#f8f8f8; border-radius:8px;"></div>
         </div>
-        <button onclick="stampaSezionePDF('ausiliari')" style="width:100%; margin-top:8px; background:#d39e00; color:white; border:none; border-radius:8px; padding:10px; font-size:12px; font-weight:700; cursor:pointer;" class="no-print">🖨 Stampa PDF sezione</button>
+        <div id="stat-aus-variazioni" class="stat-variazioni" style="font-size:12px; color:#555; padding:8px; background:#f8f8f8; border-radius:8px;"></div>
+    </div>
+    <button onclick="stampaSezionePDF('ausiliari')" style="width:100%; margin-top:8px; background:#d39e00; color:white; border:none; border-radius:8px; padding:10px; font-size:12px; font-weight:700; cursor:pointer;" class="no-print">🖨 Stampa PDF sezione</button>
     </div>
 
     <div class="stat-col" id="stat-col-regolari" style="width:100%;">
-        <div style="background:#2c3e50; color:white; text-align:center; padding:10px; border-radius:10px 10px 0 0; font-weight:700; font-size:14px; letter-spacing:0.5px;">PIONIERI REGOLARI</div>
-        <div style="background:#f9f9f9; border:1px solid #ddd; border-top:none; border-radius:0 0 10px 10px; padding:10px;">
+    <div style="background:#2c3e50; color:white; text-align:center; padding:10px; border-radius:10px 10px 0 0; font-weight:700; font-size:14px; letter-spacing:0.5px;">PIONIERI REGOLARI</div>
+    <div class="stat-inner">
+        <div class="stat-tabella" style="background:#f9f9f9; border:1px solid #ddd; border-top:none; border-radius:0 0 10px 10px; padding:10px;">
             <table id="tbl-regolari" style="width:100%; border-collapse:collapse; font-size:13px;"></table>
             <div style="margin-top:10px; padding:8px; background:#eaf0f6; border-radius:8px; border:1px solid #b0c8e0;">
                 <div id="stat-reg-totali" style="font-size:12px;"></div>
             </div>
-            <div id="stat-reg-variazioni" style="margin-top:8px; font-size:12px; color:#555; padding:8px; background:#f8f8f8; border-radius:8px;"></div>
         </div>
-        <button onclick="stampaSezionePDF('regolari')" style="width:100%; margin-top:8px; background:#2c3e50; color:white; border:none; border-radius:8px; padding:10px; font-size:12px; font-weight:700; cursor:pointer;" class="no-print">🖨 Stampa PDF sezione</button>
-    
-</div>
+        <div id="stat-reg-variazioni" class="stat-variazioni" style="font-size:12px; color:#555; padding:8px; background:#f8f8f8; border-radius:8px;"></div>
+    </div>
+    <button onclick="stampaSezionePDF('regolari')" style="width:100%; margin-top:8px; background:#2c3e50; color:white; border:none; border-radius:8px; padding:10px; font-size:12px; font-weight:700; cursor:pointer;" class="no-print">🖨 Stampa PDF sezione</button>
+    </div>
+         
 <div class="stat-col" id="stat-col-generale" style="width:100%;">
-        <div style="background:#5b7fa6; color:white; text-align:center; padding:10px; border-radius:10px 10px 0 0; font-weight:700; font-size:14px; letter-spacing:0.5px;">📊 RIEPILOGO CONGREGAZIONE</div>
-        <div style="background:#eef3f8; border:1px solid #b0c4d8; border-top:none; border-radius:0 0 10px 10px; padding:10px;">
+    <div style="background:#5b7fa6; color:white; text-align:center; padding:10px; border-radius:10px 10px 0 0; font-weight:700; font-size:14px; letter-spacing:0.5px;">📊 RIEPILOGO CONGREGAZIONE</div>
+    <div class="stat-inner">
+        <div class="stat-tabella" style="background:#eef3f8; border:1px solid #b0c4d8; border-top:none; border-radius:0 0 10px 10px; padding:10px;">
             <table id="tbl-generale" style="width:100%; border-collapse:collapse; font-size:13px;"></table>
             <div style="margin-top:10px; padding:8px; background:#dce8f2; border-radius:8px; border:1px solid #a0b8cc;">
                 <div id="stat-gen-totali" style="font-size:12px; color:#2a4a66;"></div>
             </div>
-            <div id="stat-gen-variazioni" style="margin-top:8px; font-size:12px; color:#555; padding:8px; background:#f8f8f8; border-radius:8px;"></div>
         </div>
-        <button onclick="stampaSezionePDF('generale')" style="width:100%; margin-top:8px; background:#5b7fa6; color:white; border:none; border-radius:8px; padding:10px; font-size:12px; font-weight:700; cursor:pointer;" class="no-print">🖨 Stampa PDF sezione</button>
+        <div id="stat-gen-variazioni" class="stat-variazioni" style="font-size:12px; color:#555; padding:8px; background:#f8f8f8; border-radius:8px;"></div>
     </div>
+    <button onclick="stampaSezionePDF('generale')" style="width:100%; margin-top:8px; background:#5b7fa6; color:white; border:none; border-radius:8px; padding:10px; font-size:12px; font-weight:700; cursor:pointer;" class="no-print">🖨 Stampa PDF sezione</button>
+</div>
 </div>
 <div id="help-screen" style="display: none;">
     <div class="ios-header">
