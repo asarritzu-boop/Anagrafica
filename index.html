@@ -494,6 +494,17 @@
         flex: 1 1 calc(50% - 12px) !important;
         width: calc(50% - 12px) !important;
         min-width: 300px;
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    .stat-col > div:first-child {
+        flex: 2;
+    }
+    .stat-col > div:last-child {
+        flex: 1;
+        min-width: 140px;
     }
         }
 </style>
