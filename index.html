@@ -5243,13 +5243,18 @@ Domanda: ${domanda}`
     );
 
     const json = await res.json();
-    console.log('Risposta Gemini:', JSON.stringify(json));
-    cr.textContent = json.candidates?.[0]?.content?.parts?.[0]?.text || '❌ Nessuna risposta';
+    
+    if (json.error) {
+      cr.textContent = '❌ Errore API: ' + json.error.message + ' (codice: ' + json.error.code + ')';
+      return;
+    }
+    
+    if (!json.candidates || json.candidates.length === 0) {
+      cr.textContent = '⚠️ Risposta vuota. Dettagli: ' + JSON.stringify(json);
+      return;
+    }
 
-  } catch(err) {
-    cr.textContent = json.candidates?.[0]?.content?.parts?.[0]?.text 
-  || json.error?.message 
-  || JSON.stringify(json);
+    cr.textContent = json.candidates[0]?.content?.parts?.[0]?.text || '❌ Testo non trovato';
   }
 }
 
