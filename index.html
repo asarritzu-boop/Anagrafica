@@ -5255,6 +5255,9 @@ Domanda: ${domanda}`
     }
 
     cr.textContent = json.candidates[0]?.content?.parts?.[0]?.text || '❌ Testo non trovato';
+
+  } catch(err) {
+    cr.textContent = '❌ Errore: ' + err.message;
   }
 }
 
