@@ -5188,21 +5188,54 @@ window.inviaAGemini = async function() {
   ci.value = '';
 
   try {
-    const dati = {
-      archivio: JSON.parse(localStorage.getItem('archivio_congregazione') || '[]'),
-      gruppi: JSON.parse(localStorage.getItem('gruppi_servizio') || '[]'),
-      storico: JSON.parse(localStorage.getItem('storico_congregazione') || '[]')
-    };
+    const archivio = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
+    const gruppi = JSON.parse(localStorage.getItem('gruppi_servizio') || '[]');
+    const storico = JSON.parse(localStorage.getItem('storico_congregazione') || '[]');
+
+    // Solo i campi essenziali per non sovraccaricare il contesto
+    const datiRidotti = archivio.map(p => ({
+      id: p.id,
+      nome_cognome: p.nome_cognome,
+      data_nascita: p.data_nascita,
+      data_battesimo: p.data_battesimo,
+      anziano: p.anziano,
+      servitore: p.servitore,
+      p_regolare: p.p_regolare,
+      p_speciale: p.p_speciale,
+      p_ausiliario: p.p_ausiliario,
+      maschio: p.maschio,
+      femmina: p.femmina,
+      altre_pecore: p.altre_pecore,
+      unto: p.unto,
+      anno_servizio: p.anno_servizio,
+      mesi_dati: p.mesi_dati // [{min, aus, ore, studi, obs}] x 12 mesi
+    }));
+
+    const gruppiRidotti = gruppi.map(g => ({
+      titolo: g.titolo,
+      sorveglianteId: g.sorveglianteId,
+      assistenteId: g.assistenteId,
+      membriIds: g.membriIds
+    }));
 
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyBdGQXwlhGDT-ltOx_Mi6Bygb5ZFrMBJmg`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBdGQXwlhGDT-ltOx_Mi6Bygb5ZFrMBJmg`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `Sei un assistente integrato nell'app "Anagrafica Congregazione S-21", un'applicazione PWA per la gestione dell'anagrafica dei pubblicatori di una congregazione dei Testimoni di Geova. I dati che ricevi contengono: "archivio" (elenco dei pubblicatori con i loro dati personali, privilegi, ore di servizio, note), "gruppi" (gruppi di servizio con i relativi membri), "storico" (storico attività della congregazione). Rispondi SOLO in base a questi dati. Non inventare informazioni non presenti. Se la domanda non riguarda l'anagrafica o la gestione della congregazione, rispondi che sei specializzato solo in questo ambito.\n\nDati congregazione: ${JSON.stringify(dati)}\n\nDomanda: ${domanda}`
+              text: `Sei un assistente integrato nell'app "Anagrafica Congregazione S-21" per la gestione dei pubblicatori di una congregazione dei Testimoni di Geova.
+I mesi sono indicizzati da 0 a 11: 0=Settembre, 1=Ottobre, 2=Novembre, 3=Dicembre, 4=Gennaio, 5=Febbraio, 6=Marzo, 7=Aprile, 8=Maggio, 9=Giugno, 10=Luglio, 11=Agosto.
+Ogni mese ha: min=ha fatto rapporto, aus=pioniere ausiliario, ore=ore, studi=studi biblici.
+I gruppi hanno un id sorvegliante e assistente, usa l'id per trovare il nome nell'archivio.
+Rispondi SOLO in base ai dati forniti. Non inventare nulla. Se non hai i dati necessari, dillo chiaramente.
+
+Archivio: ${JSON.stringify(datiRidotti)}
+Gruppi: ${JSON.stringify(gruppiRidotti)}
+
+Domanda: ${domanda}`
             }]
           }]
         })
@@ -5210,6 +5243,7 @@ window.inviaAGemini = async function() {
     );
 
     const json = await res.json();
+    console.log('Risposta Gemini:', JSON.stringify(json));
     cr.textContent = json.candidates?.[0]?.content?.parts?.[0]?.text || '❌ Nessuna risposta';
 
   } catch(err) {
