@@ -5182,12 +5182,11 @@ window.inviaAGemini = async function() {
   const cr = document.getElementById('cr');
   const ci = document.getElementById('ci');
   const domanda = ci.value.trim();
-  
   if (!domanda) return;
-  
+
   cr.textContent = '⏳ Elaborando la risposta...';
   ci.value = '';
-  
+
   try {
     const dati = {
       archivio: JSON.parse(localStorage.getItem('archivio_congregazione') || '[]'),
@@ -5195,21 +5194,24 @@ window.inviaAGemini = async function() {
       storico: JSON.parse(localStorage.getItem('storico_congregazione') || '[]')
     };
 
-      // Ora puntiamo all'indirizzo reale del tuo server su Vercel
-    const res = await fetch('https://claude-proxy-one.vercel.app/api/chat', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-  domanda,
-  dati,
-  systemPrompt: `Sei un assistente integrato nell'app "Anagrafica Congregazione S-21", un'applicazione PWA per la gestione dell'anagrafica dei pubblicatori di una congregazione dei Testimoni di Geova. I dati che ricevi contengono: "archivio" (elenco dei pubblicatori con i loro dati personali, privilegi, ore di servizio, note), "gruppi" (gruppi di servizio con i relativi membri), "storico" (storico attività della congregazione). Rispondi SOLO in base a questi dati. Non inventare informazioni non presenti. Se la domanda non riguarda l'anagrafica o la gestione della congregazione, rispondi che sei specializzato solo in questo ambito.`
-})
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyBHKrYWidgy1ixXXTIvTRf9MkRXTs215UA`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Sei un assistente integrato nell'app "Anagrafica Congregazione S-21", un'applicazione PWA per la gestione dell'anagrafica dei pubblicatori di una congregazione dei Testimoni di Geova. I dati che ricevi contengono: "archivio" (elenco dei pubblicatori con i loro dati personali, privilegi, ore di servizio, note), "gruppi" (gruppi di servizio con i relativi membri), "storico" (storico attività della congregazione). Rispondi SOLO in base a questi dati. Non inventare informazioni non presenti. Se la domanda non riguarda l'anagrafica o la gestione della congregazione, rispondi che sei specializzato solo in questo ambito.\n\nDati congregazione: ${JSON.stringify(dati)}\n\nDomanda: ${domanda}`
+            }]
+          }]
+        })
+      }
+    );
+
     const json = await res.json();
-    
-    // Il tuo file chat.js universale restituisce già il campo "risposta"
-    cr.textContent = json.risposta || JSON.stringify(json);
-    
+    cr.textContent = json.candidates?.[0]?.content?.parts?.[0]?.text || '❌ Nessuna risposta';
+
   } catch(err) {
     cr.textContent = '❌ Errore: ' + err.message;
   }
