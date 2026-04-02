@@ -5247,7 +5247,9 @@ Domanda: ${domanda}`
     cr.textContent = json.candidates?.[0]?.content?.parts?.[0]?.text || '❌ Nessuna risposta';
 
   } catch(err) {
-    cr.textContent = '❌ Errore: ' + err.message;
+    cr.textContent = json.candidates?.[0]?.content?.parts?.[0]?.text 
+  || json.error?.message 
+  || JSON.stringify(json);
   }
 }
 
