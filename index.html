@@ -3052,6 +3052,7 @@ document.getElementById('group-members-selection').innerHTML = arch.slice().sort
     const PAD_MM    = 3.5;
     const ROW_H_MIN = 3.8;
     const M_MAX_MM  = 20, M_MIN_MM = 5, G_MM = 6;
+const TITLE_AREA = 28;
 
     const layoutRows = (total, cols) => {
         const rows = Math.ceil(total / cols);
@@ -3087,7 +3088,7 @@ document.getElementById('group-members-selection').innerHTML = arch.slice().sort
                 rm[layoutTmp[gi].r] = Math.max(rm[layoutTmp[gi].r], membri.length);
             });
             const totalRighe = Object.values(rm).reduce((a, b) => a + b, 0);
-            const rowHTry = (PH - 2 * M_MAX_MM - (nRows - 1) * G_MM) / (totalRighe + nRows * 1.8);
+            const rowHTry = (PH - TITLE_AREA - M_MAX_MM - (nRows - 1) * G_MM) / (totalRighe + nRows * 1.8);
 
             if (rowHTry >= ROW_H_MIN) {
                 memberFS = fs; NUM_COLS = cols; rowDist = dist;
@@ -3114,7 +3115,7 @@ document.getElementById('group-members-selection').innerHTML = arch.slice().sort
     const computeStress = (M_v, G_v) => {
         const colW_v = (PW - 2 * M_v - (NUM_COLS - 1) * G_v) / NUM_COLS;
         const totalR = Object.values(rowMaxMap).reduce((a, b) => a + b, 0);
-        const rowH_v = (PH - 2 * M_v - (nRows - 1) * G_v) / (totalR + nRows * 1.8);
+        const rowH_v = (PH - TITLE_AREA - M_v - (nRows - 1) * G_v) / (totalR + nRows * 1.8);
         const hdrH_v = rowH_v * 1.8;
         return { colW: colW_v, rowH: rowH_v, headerH: hdrH_v };
     };
@@ -3136,7 +3137,7 @@ document.getElementById('group-members-selection').innerHTML = arch.slice().sort
 
     // ── Origini Y (dall'alto, in mm) per ogni riga di blocchi ─────────────────
     const yOrigins = [];
-    let yCur = M;
+    let yCur = TITLE_AREA;
     for (let r = 0; r < nRows; r++) {
         yOrigins.push(yCur);
         yCur += blockHperR[r] + G;
@@ -3146,7 +3147,18 @@ document.getElementById('group-members-selection').innerHTML = arch.slice().sort
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(titleFS);
     setColor(BORDEAUX);
-    doc.text('GRUPPI DI SERVIZIO', PW / 2, M / 2 + titleFS * PT2MM * 0.35, { align: 'center' });
+    doc.text('GRUPPI DI SERVIZIO', PW / 2, TITLE_AREA * 0.55, { align: 'center' });
+
+// ── Riga totali sotto il titolo ───────────────────────────────────────────
+const totProcl  = arch.filter(p => !p.inattivo).length;
+const totAnz    = arch.filter(p => p.anziano).length;
+const totSM     = arch.filter(p => p.servitore).length;
+const totPR     = arch.filter(p => p.p_regolare).length;
+const rigaTotali = `Proclamatori: ${totProcl}   |   Anziani: ${totAnz}   |   Servitori di ministero: ${totSM}   |   Pionieri Regolari: ${totPR}`;
+doc.setFont('helvetica', 'normal');
+doc.setFontSize(Math.max(5, titleFS * 0.48));
+setColor(BLACK);
+doc.text(rigaTotali, PW / 2, TITLE_AREA * 0.88, { align: 'center' });
 
     // ── Disegna ogni gruppo ────────────────────────────────────────────────────
     gruppiConMembri.forEach(({ g, membri }, gi) => {
