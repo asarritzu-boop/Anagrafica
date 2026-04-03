@@ -243,7 +243,8 @@
     .input-group-ios { margin-bottom: 15px; }
     .input-group-ios label { font-size: 12px; font-weight: 600; color: var(--ios-gray); text-transform: uppercase; margin-left: 5px; margin-bottom: 5px; display: block; }
     .input-group-ios input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #D1D1D6; font-size: 16px; box-sizing: border-box; }
-    .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; padding: 10px 20px; }
+   .groups-grid { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 10px 20px; }
+@media (min-width: 700px), (orientation: landscape) { .groups-grid { grid-template-columns: repeat(2, 1fr); } }
     .group-card { background: #fff; border-radius: 16px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px; }
     .group-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
     .group-title { font-size: 18px; font-weight: 700; color: var(--ios-blue); }
@@ -2795,8 +2796,8 @@ zip.file(`${safeName}_${item.anno_servizio || 'ND'}.pdf`, pdfBytes);
             const gruppi = JSON.parse(localStorage.getItem('gruppi_servizio') || '[]');
             const arch = JSON.parse(localStorage.getItem('archivio_congregazione') || '[]');
             const container = document.getElementById('groups-display');
-            container.className = "";
-            container.style.padding = "10px 20px";
+            container.className = "groups-grid";
+container.style.cssText = "";
 
             if (!gruppi.length) {
                 container.innerHTML = "<p style='text-align:center; padding:20px'>Nessun gruppo.</p>";
@@ -2848,7 +2849,7 @@ zip.file(`${safeName}_${item.anno_servizio || 'ND'}.pdf`, pdfBytes);
                     </tr>`).join('');
 
                 return `
-                <div style="background:#fff; border-radius:14px; margin-bottom:16px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.07); border:1px solid #e5e5ea;">
+                <div style="background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.07); border:1px solid #e5e5ea;">
                     <div style="background:#5856D6; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-size:16px; font-weight:700; color:white;">${g.titolo}</span>
                         <div style="display:flex; gap:6px;">
