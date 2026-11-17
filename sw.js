@@ -43,6 +43,17 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
+  // index.html e navigazione: prima la rete, cache solo se offline
+  if (e.request.mode === 'navigate' || url.pathname.endsWith('index.html')) {
+    e.respondWith(
+      fetch(e.request).then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, copy));
+        return response;
+      }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
+    );
+    return;
+  }
   // Per tutto il resto: Cache first, fallback su rete
   e.respondWith(
     caches.match(e.request).then((cached) => {
