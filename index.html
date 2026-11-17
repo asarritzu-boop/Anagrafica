@@ -1283,7 +1283,7 @@ async function aggiungCampi(pdfBytes, dati) {
   // Font standard
   const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
+const zadbFont = await pdfDoc.embedFont(StandardFonts.ZapfDingbats);
   // Recupera valori dal form HTML
   const g = id => document.getElementById(id);
 
@@ -1388,30 +1388,38 @@ const fieldDict = pdfDoc.context.obj(fieldDictObj);
   }
 
   // ── Helper: crea campo checkbox AcroForm ──────────────────────────────────
-  function addCheckbox(name, rc, checked) {
-    const [x0,yB,x1,yT] = rc.pt;
-    const fieldW=x1-x0, fieldH=yT-yB;
-    const fs = Math.min(fieldW,fieldH)*0.75;
+ function addCheckbox(name, rc, checked, symbolType = 'V') {
+    const [x0, yB, x1, yT] = rc.pt;
+    const fieldW = x1 - x0, fieldH = yT - yB;
+    
+    let onContent = '';
+    const m = 2.0; // Margine interno
 
-    // AP stream ON (checkmark ✓ con ZapfDingbats '4')
-    const xOff = Math.max(0,(fieldW - fs*0.6)/2);
-    const yOff = Math.max(0,(fieldH - fs*0.8)/2);
-    const m2 = 1.5;
-const onContent = `q 0.6 w ${m2} ${m2} m ${fieldW-m2} ${fieldH-m2} l S ${fieldW-m2} ${m2} m ${m2} ${fieldH-m2} l S Q\n`;
+    if (symbolType === 'X') {
+      // Disegno vettoriale di una X pulita e centrata
+      onContent = `q 1.2 w 
+        ${m} ${m} m ${fieldW-m} ${fieldH-m} l S 
+        ${fieldW-m} ${m} m ${m} ${fieldH-m} l S 
+      Q\n`;
+    } else {
+      // Disegno vettoriale di una V (spunta) pulita e centrata
+      onContent = `q 1.2 w 
+        ${m} ${fieldH*0.4} m ${fieldW*0.35} ${m} l 
+        ${fieldW-m} ${fieldH-m} l S 
+      Q\n`;
+    }
+
     const offContent = ``;
 
-    const makeStream = (content, resources) => {
+    const makeStream = (content) => {
       const s = pdfDoc.context.flateStream(content, {});
       s.dict.set(PDFName.of('Subtype'), PDFName.of('Form'));
-      s.dict.set(PDFName.of('BBox'), pdfDoc.context.obj([0,0,fieldW,fieldH]));
-      if (resources) s.dict.set(PDFName.of('Resources'), pdfDoc.context.obj(resources));
+      s.dict.set(PDFName.of('BBox'), pdfDoc.context.obj([0, 0, fieldW, fieldH]));
       return pdfDoc.context.register(s);
     };
 
-    const zadbFont = pdfDoc.embedStandardFont ? null : null; // ZapfDingbats è built-in
-    const onRef  = makeStream(onContent, { Font: { ZaDb: PDFName.of('ZapfDingbats') } });
-  
-    const offRef = makeStream(offContent, {});
+    const onRef  = makeStream(onContent);
+    const offRef = makeStream(offContent);
 
     const nDict = pdfDoc.context.obj({ Yes: onRef, Off: offRef });
     const nDictRef = pdfDoc.context.register(nDict);
@@ -1429,14 +1437,11 @@ const onContent = `q 0.6 w ${m2} ${m2} m ${fieldW-m2} ${fieldH-m2} l S ${fieldW-
       V:       state,
       AS:      state,
       DV:      PDFName.of('Off'),
-      DA:      PDFString.of('/ZaDb 0 Tf 0 g'),
       AP:      apDictRef,
-      MK:      pdfDoc.context.obj({ CA: PDFString.of('4') }),
       F:       PDFNumber.of(4),
     });
     return pdfDoc.context.register(fieldDict);
   }
-
   // ── Aggiungi tutti i campi ────────────────────────────────────────────────
   const allRefs = [];
 
@@ -1452,30 +1457,29 @@ const onContent = `q 0.6 w ${m2} ${m2} m ${fieldW-m2} ${fieldH-m2} l S ${fieldW-
   // ── Anagrafica — nomi campi IDENTICI al PDF originale (letti dall'estrattore) ──
   tf('900_1_Text_SanSerif',   CF.nome,          d.nome,          {fontSize:12});
   tf('900_2_Text_SanSerif',   CF.dataNascita,   d.dataNascita,   {fontSize:12});
-  cb('900_3_CheckBox',        CF.maschio,       d.maschio);
-  cb('900_4_CheckBox',        CF.femmina,       d.femmina);
-  tf('900_5_Text_SanSerif',   CF.dataBattesimo, d.dataBattesimo, {fontSize:12});
-  cb('900_6_CheckBox',        CF.altrepecore,   d.altrepecore);
-  cb('900_7_CheckBox',        CF.unto,          d.unto);
-  cb('900_8_CheckBox',        CF.anziano,       d.anziano);
-  cb('900_9_CheckBox',        CF.servitore,     d.servitore);
-  cb('900_10_CheckBox',       CF.pio_reg,       d.pio_reg);
-  cb('900_11_CheckBox',       CF.pio_spec,      d.pio_spec);
-  cb('900_12_CheckBox',       CF.mission,       d.mission);
+ cb('900_3_CheckBox',        CF.maschio,       d.maschio,       'X');
+  cb('900_4_CheckBox',        CF.femmina,       d.femmina,       'X');
+  cb('900_6_CheckBox',        CF.altrepecore,   d.altrepecore,   'X');
+  cb('900_7_CheckBox',        CF.unto,          d.unto,          'X');
+  cb('900_8_CheckBox',        CF.anziano,       d.anziano,       'X');
+  cb('900_9_CheckBox',        CF.servitore,     d.servitore,     'X');
+  cb('900_10_CheckBox',       CF.pio_reg,       d.pio_reg,       'X');
+  cb('900_11_CheckBox',       CF.pio_spec,      d.pio_spec,      'X');
+  cb('900_12_CheckBox',       CF.mission,       d.mission,       'X');
   tf('900_13_Text_C_SanSerif',CF.anno_serv,     annoServ,                 {fontSize:10, align:'center'});
 
   // ── Righe mesi — codici 20 (Settembre) … 31 (Agosto) ────────────────────
   // 901_XX = ministero, 902_XX = studi, 903_XX = pioniere aux,
   // 904_XX = ore,       905_XX = osservazioni
   ROWS.forEach((row, i) => {
-  const code = 20 + i;
+    const code = 20 + i;
     const m = d.mesi[i] || {};
-    cb(`901_${code}_CheckBox`,        row.min,   m.min   || false);
+    cb(`901_${code}_CheckBox`,        row.min,   m.min   || false, 'V');
     tf(`902_${code}_Text_C_SanSerif`, row.studi, m.studi || '', {align:'center'});
-    cb(`903_${code}_CheckBox`,        row.paux,  m.paux  || false);
+    cb(`903_${code}_CheckBox`,        row.paux,  m.paux  || false, 'V');
     tf(`904_${code}_S21_Value`,       row.ore,   m.ore   || '', {align:'center'});
     tf(`905_${code}_Text_SanSerif`,   row.note,  m.note  || '', {fontSize:12});
-});
+  });
 
   // ── Totale (calcolato automaticamente) ───────────────────────────────────
   const oreFieldNames = Array.from({length:12}, (_,i) => `904_${20+i}_S21_Value`);
@@ -1488,23 +1492,16 @@ const totOreRef = tf('904_32_S21_Value', CF.tot_ore, totOreStr, {align:'center',
   page.node.set(PDFName.of('Annots'), annotArray);
 
   // Font resources per AcroForm
+ // Font resources per AcroForm (Puntano ai riferimenti reali dei font incorporati)
   const drFont = pdfDoc.context.obj({
-    Helv: pdfDoc.context.obj({
-      Type:     PDFName.of('Font'),
-      Subtype:  PDFName.of('Type1'),
-      BaseFont: PDFName.of('Helvetica'),
-    }),
-    ZaDb: pdfDoc.context.obj({
-      Type:     PDFName.of('Font'),
-      Subtype:  PDFName.of('Type1'),
-      BaseFont: PDFName.of('ZapfDingbats'),
-    }),
+    Helv: helvetica.ref,
+    ZaDb: zadbFont ? zadbFont.ref : helvetica.ref,
   });
   const dr = pdfDoc.context.obj({ Font: drFont });
 
   pdfDoc.catalog.set(PDFName.of('AcroForm'), pdfDoc.context.obj({
     Fields:          annotArray,
-    NeedAppearances: PDFBool.True,
+    NeedAppearances: PDFBool.False, // <--- CORRETTO
     DR:              dr,
     DA:              PDFString.of('/Helv 9 Tf 0 g'),
     CO:              pdfDoc.context.obj([totOreRef]),
